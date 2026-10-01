@@ -118,10 +118,12 @@ export function AiEditPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll only the transcript — scrollIntoView would also scroll the editor and dialog behind it.
+    const list = endRef.current?.parentElement;
+    if (list && msgs.length > 1) list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
   }, [msgs]);
   useEffect(() => {
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   }, []);
 
   const openProposal = () => {
