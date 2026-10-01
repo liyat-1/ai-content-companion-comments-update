@@ -277,14 +277,15 @@ export function CampaignEditor({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto lg:overflow-hidden">
           <div
-            className="grid h-full min-h-0 xl:grid-cols-[minmax(480px,0.92fr)_minmax(520px,1.08fr)]"
+            className="grid min-h-full lg:h-full lg:min-h-0 lg:grid-cols-[minmax(390px,0.9fr)_minmax(430px,1.1fr)]"
           >
-            <div className="min-w-0 overflow-y-auto border-r border-border bg-card px-4 py-4 sm:px-6">
+            <div className="min-w-0 border-b border-border bg-card px-4 py-4 sm:px-5 lg:overflow-y-auto lg:border-b-0 lg:border-r">
               {/* Channel tabs — Text and Email each keep their own Direct / OTA sections */}
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <div className="flex gap-1 rounded-md bg-muted p-1">
+              <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-3 border-b border-border bg-card/95 px-4 py-3 backdrop-blur-sm sm:-mx-5 sm:px-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex gap-1 rounded-md bg-muted p-1">
                   <button
                     onClick={() => setChannel("text")}
                     className={channelTab(activeChannel === "text")}
@@ -298,31 +299,29 @@ export function CampaignEditor({
                   >
                     Email
                   </button>
+                  </div>
+                  <span className="h-5 w-px bg-border" aria-hidden="true" />
+                  <div className="flex gap-1 rounded-md bg-muted p-1">
+                    {(["direct", "ota"] as AudienceKey[]).map((key) => (
+                      <Button
+                        key={key}
+                        variant={audience === key ? "secondary" : "ghost"}
+                        size="sm"
+                        className="px-3"
+                        onClick={() => {
+                          setAudience(key);
+                          setPanel(null);
+                        }}
+                      >
+                        {key === "direct" ? "Direct" : "OTA"}
+                        {draft.variants[key].customized && <span className="size-1.5 rounded-full bg-brand" />}
+                      </Button>
+                    ))}
+                  </div>
+                  {!supportsEmail && (
+                    <span className="text-[11px] text-muted-foreground">Text only</span>
+                  )}
                 </div>
-                {!supportsEmail && (
-                  <span className="text-[11px] text-muted-foreground">
-                    This strategy sends text only — email is not part of the plan.
-                  </span>
-                )}
-              </div>
-              <div className="mb-3 flex items-center gap-1 border-b border-border">
-                {(["direct", "ota"] as AudienceKey[]).map((key) => (
-                  <Button
-                    key={key}
-                    variant="ghost"
-                    size="sm"
-                    className={`rounded-b-none border-b-2 px-3 ${audience === key ? "border-brand text-brand" : "border-transparent text-muted-foreground"}`}
-                    onClick={() => {
-                      setAudience(key);
-                      setPanel(null);
-                    }}
-                  >
-                    {AUDIENCE_LABEL[key]}
-                    {draft.variants[key].customized && (
-                      <span className="size-1.5 rounded-full bg-brand" />
-                    )}
-                  </Button>
-                ))}
               </div>
 
               <section className="min-w-0 border border-border bg-card shadow-card">
@@ -345,12 +344,27 @@ export function CampaignEditor({
                                 <Sparkle size={13} />
                                 Edit with AI
                               </Button>
-                              <SectionAction
-                                icon={History}
-                                label="Compare to previous"
-                                active={rightView === "history"}
-                                onClick={() => setRightView(rightView === "history" ? "preview" : "history")}
-                              />
+                               <DropdownMenu>
+                                 <DropdownMenuTrigger asChild>
+                                   <Button variant={rightView === "history" ? "secondary" : "outline"} size="sm" className="px-2.5">
+                                     <History size={12} />
+                                     {rightView === "history" ? selectedHistory?.date : "Compare to previous"}
+                                     <ChevronDown size={12} />
+                                   </Button>
+                                 </DropdownMenuTrigger>
+                                 <DropdownMenuContent align="end" className="w-64">
+                                   <DropdownMenuItem onSelect={() => { setHistoryId(null); setRightView("preview"); }}>
+                                     <span className="min-w-0 flex-1"><span className="block text-[12px] font-semibold">Current draft</span><span className="block text-[10px] text-muted-foreground">Return to the content you are editing</span></span>
+                                     {rightView !== "history" && <Check size={13} className="text-brand" />}
+                                   </DropdownMenuItem>
+                                   {history.map((item) => (
+                                     <DropdownMenuItem key={item.id} onSelect={() => { setHistoryId(item.id); setRightView("history"); }}>
+                                       <span className="min-w-0 flex-1"><span className="block text-[12px] font-semibold">{item.date}</span><span className="block truncate text-[10px] text-muted-foreground">{item.note}</span></span>
+                                       {rightView === "history" && selectedHistory?.id === item.id && <Check size={13} className="text-brand" />}
+                                     </DropdownMenuItem>
+                                   ))}
+                                 </DropdownMenuContent>
+                               </DropdownMenu>
                               <SectionAction
                                 icon={HelpCircle}
                                 label="Help"
@@ -473,7 +487,7 @@ export function CampaignEditor({
             </div>
 
             {/* The selected audience and channel stay fixed while this area switches context. */}
-            <div className="relative min-h-[520px] min-w-0 overflow-y-auto bg-canvas p-4 sm:p-5">
+            <div className={`relative min-h-[520px] min-w-0 p-4 sm:p-5 lg:h-full lg:overflow-y-auto ${rightView === "ai" ? "bg-brand-soft/35" : "bg-canvas"}`}>
               {rightView !== "ai" && rightView !== "minimized" && (
                 <>
                   <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -482,25 +496,10 @@ export function CampaignEditor({
                       {activeChannel === "text" ? "Text" : "Email"}
                     </p>
                     {rightView === "history" ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            {selectedHistory?.date ?? "Choose version"}
-                            <ChevronDown size={13} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-64">
-                          {history.map((item) => (
-                            <DropdownMenuItem key={item.id} onSelect={() => setHistoryId(item.id)}>
-                              <span className="min-w-0 flex-1">
-                                <span className="block text-[12px] font-semibold">{item.date}</span>
-                                <span className="block truncate text-[10px] text-muted-foreground">{item.note}</span>
-                              </span>
-                              {selectedHistory?.id === item.id && <Check size={13} className="text-brand" />}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button variant="ghost" size="sm" onClick={() => { setHistoryId(null); setRightView("preview"); }}>
+                        <Eye size={13} />
+                        Current draft
+                      </Button>
                     ) : rightView !== "preview" && (
                       <Button variant="ghost" size="sm" onClick={() => setRightView("preview")}>
                         <Eye size={13} />

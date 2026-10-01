@@ -317,3 +317,9 @@
 - [x] Replace the live preview with the standard AI panel and add a compact docked minimized state
 - [x] Add dated previous-version selection, dynamic preview, and selected-channel restoration
 - [x] Verify direct and performance-led entry across desktop and narrow layouts
+## Campaign editor usability follow-up
+
+- [x] Make the stacked editor scroll naturally on narrower screens and keep Direct/OTA controls visible
+- [x] Turn Compare to previous into a dated publication dropdown with a current-draft return
+- [x] Remove the oversized personalization row and strengthen the AI panel's visual separation
+
