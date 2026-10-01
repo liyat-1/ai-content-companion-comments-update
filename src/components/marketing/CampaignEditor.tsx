@@ -244,26 +244,25 @@ export function CampaignEditor({
         role="dialog"
         aria-modal="true"
         aria-labelledby="campaign-editor-title"
-        className="flex h-[94vh] max-h-[94vh] w-full max-w-[1480px] flex-col overflow-hidden rounded-lg border border-border bg-canvas shadow-float"
+        className="flex h-[calc(100dvh-1rem)] w-full max-w-[1480px] flex-col overflow-hidden rounded-lg border border-border bg-canvas shadow-float sm:h-[calc(100dvh-2rem)]"
       >
-        <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-card px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="min-w-0">
-              <p className="text-[10.5px] font-medium text-muted-foreground">Automated invite</p>
+              <p className="truncate text-[10.5px] font-medium text-muted-foreground">
+                Automated invite · {STRATEGY_LABEL[draft.strategy]}
+              </p>
               <h2
                 id="campaign-editor-title"
                 className="truncate text-[17px] font-semibold text-card-foreground"
               >
                 {draft.name}
               </h2>
-              <p className="truncate text-[11.5px] text-muted-foreground">
-                {STRATEGY_LABEL[draft.strategy]}
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span
-              className={`mr-auto text-[11.5px] sm:mr-0 ${dirty ? "text-brand" : "text-muted-foreground"}`}
+              className={`hidden text-[11.5px] sm:inline ${dirty ? "text-brand" : "text-muted-foreground"}`}
             >
               {dirty ? "Unsaved changes" : "All changes saved"}
             </span>
@@ -277,11 +276,11 @@ export function CampaignEditor({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto lg:overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:overflow-hidden">
           <div
-            className="grid min-h-full lg:h-full lg:min-h-0 lg:grid-cols-[minmax(390px,0.9fr)_minmax(430px,1.1fr)]"
+            className="grid min-h-full lg:h-full lg:min-h-0 lg:grid-rows-[minmax(0,1fr)] lg:grid-cols-[minmax(390px,0.9fr)_minmax(430px,1.1fr)]"
           >
-            <div className="min-w-0 border-b border-border bg-card px-4 py-4 sm:px-5 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+            <div className="min-w-0 border-b border-border bg-card px-4 pb-6 pt-4 sm:px-5 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:border-b-0 lg:border-r">
               {/* Channel tabs — Text and Email each keep their own Direct / OTA sections */}
               <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-3 border-b border-border bg-card/95 px-4 py-3 backdrop-blur-sm sm:-mx-5 sm:px-5">
                 <div className="flex flex-wrap items-center gap-2">
@@ -325,8 +324,8 @@ export function CampaignEditor({
               </div>
 
               <section className="min-w-0 border border-border bg-card shadow-card">
-                <div className="flex flex-wrap items-start gap-3 border-b border-border px-4 py-3">
-                  <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-2.5 border-b border-border px-4 py-3">
+                  <div className="min-w-0">
                     <p className="text-[13.5px] font-semibold text-card-foreground">
                       {AUDIENCE_LABEL[audience]}
                     </p>
@@ -487,7 +486,7 @@ export function CampaignEditor({
             </div>
 
             {/* The selected audience and channel stay fixed while this area switches context. */}
-            <div className={`relative min-h-[520px] min-w-0 p-4 sm:p-5 lg:h-full lg:overflow-y-auto ${rightView === "ai" ? "bg-brand-soft/35" : "bg-canvas"}`}>
+            <div className={`relative min-w-0 p-4 sm:p-5 lg:min-h-0 ${rightView === "ai" ? "h-[min(640px,calc(100dvh-6rem))] lg:h-full lg:overflow-hidden" : "min-h-[420px] lg:h-full lg:overflow-y-auto lg:overscroll-contain"} ${rightView === "ai" ? "bg-brand-soft/35" : "bg-canvas"}`}>
               {rightView !== "ai" && rightView !== "minimized" && (
                 <>
                   <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">

@@ -118,10 +118,12 @@ export function AiEditPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll only the transcript — scrollIntoView would also scroll the editor and dialog behind it.
+    const list = endRef.current?.parentElement;
+    if (list && msgs.length > 1) list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
   }, [msgs]);
   useEffect(() => {
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   }, []);
 
   const openProposal = () => {
@@ -259,7 +261,7 @@ export function AiEditPanel({
     <div
       className={
         embedded
-          ? "h-full min-h-[500px]"
+          ? "h-full min-h-0"
           : `fixed inset-0 grid place-items-center bg-foreground/25 p-3 backdrop-blur-[3px] sm:p-6 ${className}`
       }
       onMouseDown={(event) => !embedded && event.target === event.currentTarget && onClose()}
@@ -268,9 +270,9 @@ export function AiEditPanel({
         role={embedded ? "region" : "dialog"}
         aria-modal={embedded ? undefined : "true"}
         aria-label="Directful AI"
-        className={`ai-rise relative flex w-full flex-col overflow-hidden border border-brand/30 bg-card ${embedded ? "h-full min-h-[520px] rounded-lg shadow-lift" : "max-h-[min(86vh,50rem)] max-w-[48rem] rounded-xl shadow-float"}`}
+        className={`ai-rise relative flex w-full flex-col overflow-hidden border border-brand/30 bg-card ${embedded ? "h-full min-h-0 rounded-lg shadow-lift" : "max-h-[min(86vh,50rem)] max-w-[48rem] rounded-xl shadow-float"}`}
       >
-        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-brand/20 bg-brand-soft/70 px-4 py-3.5 sm:px-5">
+        <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-brand/20 bg-brand-soft/70 px-4 py-2.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <AiMark size={32} />
             <div className="min-w-0">
@@ -302,13 +304,13 @@ export function AiEditPanel({
           </div>
         </header>
 
-        <div className={`min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-5 ${isEmptyState ? "grid place-items-center" : "space-y-6"}`}>
+        <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 ${isEmptyState ? "flex flex-col" : "space-y-6"}`}>
           {isEmptyState ? (
-            <div className="mx-auto max-w-md text-center">
-              <span className="mx-auto grid size-11 place-items-center rounded-md bg-brand text-brand-foreground shadow-card">
+            <div className="m-auto max-w-md py-2 text-center">
+              <span className="mx-auto grid size-10 place-items-center rounded-md bg-brand text-brand-foreground shadow-card">
                 <Sparkle size={19} />
               </span>
-              <h3 className="mt-5 font-display text-[26px] font-semibold leading-tight text-card-foreground">
+              <h3 className="mt-3 font-display text-[22px] font-semibold leading-tight text-card-foreground">
                 What would you like to update?
               </h3>
               <p className="mx-auto mt-2 max-w-sm text-[12.5px] leading-relaxed text-muted-foreground">
@@ -469,15 +471,15 @@ export function AiEditPanel({
           <div ref={endRef} />
         </div>
 
-        <div className="border-t border-brand/20 bg-brand-soft/30 px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
+        <div className="shrink-0 border-t border-brand/20 bg-brand-soft/30 px-4 pb-3 pt-2.5 sm:px-5">
           {suggestedActions?.length ? (
-            <div className="mb-3 flex flex-wrap gap-1.5">
+            <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
               {suggestedActions.slice(0, 3).map((action) => (
                 <Button
                   key={action}
                   variant="outline"
                   size="sm"
-                  className="h-auto whitespace-normal px-2.5 py-1.5 text-left text-[11.5px]"
+                  className="h-auto shrink-0 whitespace-nowrap px-2.5 py-1 text-[11.5px]"
                   onClick={() => void ask(action)}
                 >
                   {action}
@@ -507,9 +509,9 @@ export function AiEditPanel({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask AI to refine this content…"
-                className="min-h-20 px-4 py-3 text-[13px]"
+                className="min-h-12 max-h-32 px-4 py-2.5 text-[13px]"
               />
-              <PromptInputFooter className="border-t border-border/60 px-2.5 pb-2.5 pt-2">
+              <PromptInputFooter className="border-t border-border/60 px-2.5 py-1.5">
                 <PromptInputTools>
                   <PromptInputActionMenu>
                     <PromptInputActionMenuTrigger
@@ -536,7 +538,7 @@ export function AiEditPanel({
               </PromptInputFooter>
             </PromptInput>
           </TooltipProvider>
-          <p className="mt-2 text-center text-[10.5px] text-muted-foreground">
+          <p className="mt-1.5 hidden text-center text-[10.5px] text-muted-foreground sm:block">
             Review every suggestion before it changes your content.
           </p>
         </div>
