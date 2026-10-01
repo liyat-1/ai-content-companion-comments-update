@@ -27,7 +27,7 @@ import {
   USAGE_ROWS,
   dismissPusher,
   publishPeriod,
-  useHistoricalVersion,
+  restoreHistoricalVersion,
   useV2,
   type Period,
   type PeriodCopy,
@@ -525,7 +525,7 @@ export function V2Workspace({
               variant="brand"
               onClick={() => {
                 if (confirmUse) {
-                  useHistoricalVersion(confirmUse.id);
+                  restoreHistoricalVersion(confirmUse.id);
                   setSelectedId(confirmUse.id);
                 }
                 setConfirmUse(null);

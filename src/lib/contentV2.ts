@@ -183,7 +183,7 @@ export function publishPeriod(id: string, copy: PeriodCopy, aiAssisted: boolean,
 function currentId(s: State) { return s.periods.find((p) => p.status === "Current")?.id ?? "2026-10"; }
 
 /** Re-base a historical version as the current suggested content. */
-export function useHistoricalVersion(id: string) {
+export function restoreHistoricalVersion(id: string) {
   set((s) => ({
     ...s,
     periods: s.periods.map((p) => p.id === id
