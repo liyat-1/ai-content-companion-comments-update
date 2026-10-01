@@ -4,6 +4,7 @@ import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Mail, MessageSq
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CampaignEditor } from "@/components/marketing/CampaignEditor";
+import { TestCampaignDialog } from "@/components/marketing/MarketingDialogs";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { AiMark, EmailMock, fill } from "@/components/content/shared";
 import { EDITOR_ID, MONTH_PACKAGES, packageSnippet, useLibrary } from "@/lib/contentLibrary";
@@ -14,20 +15,34 @@ import {
   HOTEL, TOTAL_PROPERTIES, USAGE_ROWS, dismissPusher, publishPeriod, useHistoricalVersion, useV2,
   type Period, type PeriodCopy,
 } from "@/lib/contentV2";
+import { useStore } from "./AutomatedRefresh";
 
-export function V2Workspace({ onReview, reviewedCampaigns = [] }: { onReview?: (campaignId: string) => void; reviewedCampaigns?: string[] }) {
+const REFRESH_IDS: Record<string, string> = {
+  "after-last-visit": "alv",
+  "lost-3": "m3",
+  "lost-6": "m6",
+  "lost-9": "m9",
+  "lost-12": "m12",
+  "lost-15": "m15",
+  "lost-15-plus": "m15p",
+};
+
+export function V2Workspace({ onReview }: { onReview?: (id: string) => void }) {
   const v2 = useV2();
   const { campaigns } = useMarketing();
   const { campaigns: libraryCampaigns } = useLibrary();
+  const { state: refreshState } = useStore();
   const [entered, setEntered] = useState(false);
   useEffect(() => { if (window.sessionStorage.getItem("content-v2-entered") === "true") setEntered(true); }, []);
   const revealContent = () => { window.sessionStorage.setItem("content-v2-entered", "true"); setEntered(true); };
   const [flow, setFlow] = useState<FlowSetup | null>(null);
   const [introOpen, setIntroOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [contentOpen, setContentOpen] = useState<{ name: string; text: string; email?: PeriodCopy["email"] } | null>(null);
   const [propsOpen, setPropsOpen] = useState(false);
   const [confirmUse, setConfirmUse] = useState<Period | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
 
   const periods = v2.periods;
   const current = periods.find((p) => p.status === "Current") ?? periods[2];
@@ -83,14 +98,25 @@ export function V2Workspace({ onReview, reviewedCampaigns = [] }: { onReview?: (
             {selected.aiAssisted && selected.preferences && <div className="flex flex-wrap items-start gap-3 border-l-2 border-brand bg-brand-soft/30 px-4 py-3 text-[12px]"><Sparkles size={15} className="mt-0.5 shrink-0 text-brand" /><div><p className="font-semibold text-card-foreground">How this version was written</p><p className="mt-0.5 text-muted-foreground">Tone: {selected.preferences.tone} · Direction: {selected.preferences.direction}{selected.preferences.note ? ` · “${selected.preferences.note}”` : ""}{selected.preferences.context ? ` · Inspired by: ${selected.preferences.context}` : ""}</p></div></div>}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{invites.map((campaign) => {
               const libraryCampaign = libraryCampaigns.find((item) => EDITOR_ID[item.id] === campaign.id);
-               const text = campaign.id === "after-last-visit" ? selected.copy.text : selected.status !== "Upcoming" && libraryCampaign && pack ? packageSnippet(libraryCampaign, pack, "direct") : campaign.variants.direct.text.message;
+              const text = campaign.id === "after-last-visit" ? selected.copy.text : selected.status !== "Upcoming" && libraryCampaign && pack ? packageSnippet(libraryCampaign, pack, "direct") : campaign.variants.direct.text.message;
               const email = campaign.id === "after-last-visit" ? selected.copy.email : libraryCampaign?.content.direct.email;
-              const reviewIndex = invites.findIndex((item) => item.id === campaign.id);
-              const recommendationId = ["alv", "m3", "m6", "m9", "m12", "m15", "m15p"][reviewIndex] ?? "alv";
-              const reviewed = reviewedCampaigns.includes(recommendationId);
-              return <article key={campaign.id} className={`flex min-h-[240px] flex-col overflow-hidden rounded-lg border bg-card shadow-card transition-colors hover:border-brand/30 ${reviewed ? "border-border" : "border-brand/35 bg-brand-soft/15"}`}>
-                <div className="flex-1 p-4"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">{campaign.strategy === "text" ? <MessageSquare size={15} /> : <Mail size={15} />}</span><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><h4 className="text-[14px] font-semibold text-card-foreground">{campaign.name}</h4><span className={`shrink-0 rounded-sm px-2 py-1 text-[10px] font-semibold ${reviewed ? "bg-muted text-muted-foreground" : "bg-brand-soft text-brand"}`}>{reviewed ? <span className="inline-flex items-center gap-1"><Check size={11} />Reviewed</span> : "Pending review"}</span></div><p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground"><Clock3 size={12} />{campaign.timing}</p></div></div><div className="mt-4 rounded-md bg-canvas p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Text preview</p><p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-card-foreground">“{fill(text)}”</p></div></div>
-                <div className="flex items-center gap-2 border-t border-border p-2"><Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(campaign.id)}><Pencil size={13} />Edit content</Button><Button size="sm" variant={reviewed ? "outline" : "brand"} className="flex-1" onClick={() => onReview?.(recommendationId)}>Review content</Button></div>
+              const refreshId = REFRESH_IDS[campaign.id];
+              const reviewed = refreshId ? Boolean(refreshState[refreshId]?.reviewed) : false;
+
+              return <article key={campaign.id} className="flex min-h-[240px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-card transition-colors hover:border-brand/30">
+                <div className="flex-1 p-4"><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">{campaign.strategy === "text" ? <MessageSquare size={15} /> : <Mail size={15} />}</span><div className="min-w-0"><h4 className="text-[14px] font-semibold text-card-foreground">{campaign.name}</h4><p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground"><Clock3 size={12} />{campaign.timing}</p></div></div>{refreshId && (reviewed ? <span className="flex items-center gap-1 rounded-sm bg-brand-soft px-1.5 py-0.5 text-[10px] font-bold text-brand"><Check size={11} /> Reviewed</span> : <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">Pending</span>)}</div><div className="mt-4 rounded-md bg-canvas p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Text preview</p><p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-card-foreground">“{fill(text)}”</p></div></div>
+                <div className="flex flex-wrap items-center gap-1 border-t border-border p-2">
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(campaign.id)}>Edit content</Button>
+                  {refreshId && onReview ? (
+                    <Button size="sm" variant="brand" className="ml-auto" onClick={() => onReview(refreshId)}>
+                      {reviewed ? "Review content" : "Review content"}
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="brand" className="ml-auto" onClick={() => setEditing(campaign.id)}>
+                      <Pencil size={13} /> Edit content
+                    </Button>
+                  )}
+                </div>
               </article>;
             })}</div>
             {selected.status === "Previous" && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5"><p className="text-[12px] text-muted-foreground">This version is kept in your content history.</p><Button variant="outline" onClick={() => setConfirmUse(selected)}>Review & use this version</Button></div>}
@@ -101,8 +127,10 @@ export function V2Workspace({ onReview, reviewedCampaigns = [] }: { onReview?: (
     </main>
      {flow && <RefreshFlow key={`${flow.recommendedId}-${flow.context ?? ""}`} setup={flow} periodOptions={periodOptions} baseCopy={current.copy} aiCopy={({ month, tone, direction, seasonal, note }) => [generateCopy(month, tone, direction, seasonal?.name ?? null, note)]} learning={flow.context} onPublish={({ periodId, copy, preferences }) => { publishPeriod(periodId, copy, true, preferences); setSelectedId(periodId); revealContent(); setFlow(null); }} onClose={() => setFlow(null)} />}
     <Dialog open={introOpen} onOpenChange={setIntroOpen}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>How AI refresh works</DialogTitle></DialogHeader><p className="text-[13px] leading-relaxed text-muted-foreground">Choose a period and how you want it written. Review the plan and the new messages before publishing. Your current version stays available in the schedule.</p><div className="flex justify-end"><Button variant="brand" onClick={() => { setIntroOpen(false); openUpdate(); }}>Update with AI</Button></div></DialogContent></Dialog>
+    <Dialog open={!!contentOpen} onOpenChange={(open) => !open && setContentOpen(null)}><DialogContent className="max-w-lg"><DialogHeader><DialogTitle>{contentOpen?.name} · {selected.label}</DialogTitle></DialogHeader><div className="max-h-[65vh] space-y-3 overflow-y-auto">{contentOpen?.email && <EmailMock email={contentOpen.email} image="lobby" />}<div className="rounded-md bg-muted/40 p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Text message</p><p className="mt-1 text-[12px] text-card-foreground">{fill(contentOpen?.text ?? "")}</p></div></div></DialogContent></Dialog>
     <Dialog open={propsOpen} onOpenChange={setPropsOpen}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Properties · {selected.label}</DialogTitle></DialogHeader><p className="text-[12px] text-muted-foreground">{selected.status === "Previous" ? `${selected.previouslyUsedBy ?? 0} properties previously used this content.` : `${selected.properties} of ${TOTAL_PROPERTIES} properties use this content. Others keep their own version.`}</p><ul className="max-h-[50vh] space-y-1.5 overflow-y-auto">{USAGE_ROWS.map((row) => <li key={row.property} className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 text-[12px]"><span className="min-w-0 truncate text-card-foreground">{row.property}</span><span className="shrink-0 text-muted-foreground">{row.using === "suggested" ? "Shared" : "Custom"}</span></li>)}</ul></DialogContent></Dialog>
     <Dialog open={!!confirmUse} onOpenChange={(open) => !open && setConfirmUse(null)}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Use {confirmUse?.label} content?</DialogTitle></DialogHeader><p className="text-[13px] leading-relaxed text-muted-foreground">Review the messages in this period before switching. Your current version is kept in history; properties using custom content are unchanged.</p><div className="max-h-48 overflow-y-auto rounded-md bg-muted/40 p-3 text-[12px] text-card-foreground"><p className="font-semibold">{confirmUse?.copy.email.subject}</p><p className="mt-1">{confirmUse?.copy.email.body}</p><p className="mt-2 border-t border-border pt-2">{confirmUse?.copy.text}</p></div><div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setConfirmUse(null)}>Cancel</Button><Button variant="brand" onClick={() => { if (confirmUse) { useHistoricalVersion(confirmUse.id); setSelectedId(confirmUse.id); } setConfirmUse(null); }}>Use this version</Button></div></DialogContent></Dialog>
     {editing && <CampaignEditor id={editing} onClose={() => setEditing(null)} />}
+    <TestCampaignDialog campaign={campaigns.find((c) => c.id === testing) ?? null} open={Boolean(testing)} onClose={() => setTesting(null)} />
   </MarketingShell>;
 }
