@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Check,
+  ChevronDown,
   Eye,
   History,
   HelpCircle,
@@ -17,7 +18,14 @@ import { checkContent } from "./contentChecks";
 import { AiEditPanel } from "@/components/ai/AiEditPanel";
 import { Sparkle } from "@/components/ai/Sparkle";
 import type { Copy } from "@/lib/aiWriter";
+import { campaignHistory } from "@/lib/campaignHistory";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +52,8 @@ import {
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-type Panel = "history" | "help" | "spam" | null;
+type Panel = "help" | "spam" | null;
+type RightView = "preview" | "ai" | "minimized" | "history";
 
 /** Small round action used for History / Help / Spam check on each section. */
 function SectionAction({
@@ -113,11 +122,13 @@ export function CampaignEditor({
   const [audience, setAudience] = useState<AudienceKey>(initialAudience);
   const [channel, setChannel] = useState<"text" | "email">(initialChannel);
   const [panel, setPanel] = useState<Panel>(null);
-  const [confirm, setConfirm] = useState<"leave" | "save" | "revert" | null>(null);
+  const [confirm, setConfirm] = useState<"leave" | "save" | "revert" | "restore" | null>(null);
   const [promotionPicker, setPromotionPicker] = useState(false);
-  const [rightView, setRightView] = useState<"preview" | "ai" | "minimized">(
+  const [rightView, setRightView] = useState<RightView>(
     initialAiContext ? "ai" : "preview",
   );
+  const history = useMemo(() => (source ? campaignHistory(source) : []), [source]);
+  const [historyId, setHistoryId] = useState<string | null>(null);
   const dirty = useMemo(
     () => (draft ? JSON.stringify(draft) !== baseline : false),
     [draft, baseline],
@@ -137,6 +148,8 @@ export function CampaignEditor({
   const supportsEmail = strategyHasEmail(draft.strategy);
   const activeChannel = supportsEmail ? channel : "text";
   const activePromotion = effectivePromotion(marketing, draft, audience);
+  const selectedHistory = history.find((item) => item.id === historyId) ?? history[0];
+  const historicalVariant = selectedHistory?.content[audience];
   const closeSafely = () => (dirty ? setConfirm("leave") : onClose());
   const save = () => {
     mutate((state) => {
@@ -186,6 +199,25 @@ export function CampaignEditor({
     });
     setConfirm(null);
   };
+  const restoreHistorical = () => {
+    if (!historicalVariant) return;
+    setDraft((current) => {
+      if (!current) return current;
+      const copy = clone(current);
+      if (activeChannel === "text") {
+        copy.variants[audience].text = clone(historicalVariant.text);
+        copy.variants[audience].customization.text = true;
+      } else {
+        copy.variants[audience].email = clone(historicalVariant.email);
+        copy.variants[audience].customization.email = true;
+      }
+      copy.variants[audience].customized = true;
+      copy.variants[audience].editedBy = { by: "Sevket Yilmaz", at: Date.now() };
+      return copy;
+    });
+    setRightView("preview");
+    setConfirm(null);
+  };
 
   const channelTab = (active: boolean, disabled = false) =>
     `rounded-md px-4 py-1.5 text-[12.5px] font-semibold transition-colors ${active ? "bg-card text-card-foreground shadow-card" : disabled ? "cursor-not-allowed text-muted-foreground/45" : "text-muted-foreground hover:text-foreground"}`;
@@ -214,7 +246,7 @@ export function CampaignEditor({
         role="dialog"
         aria-modal="true"
         aria-labelledby="campaign-editor-title"
-        className="flex h-[92vh] max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-lg border border-border bg-canvas shadow-float"
+        className="flex h-[94vh] max-h-[94vh] w-full max-w-[1480px] flex-col overflow-hidden rounded-lg border border-border bg-canvas shadow-float"
       >
         <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -247,11 +279,11 @@ export function CampaignEditor({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-hidden">
           <div
-            className={`mx-auto grid max-w-7xl gap-6 ${rightView === "minimized" ? "lg:grid-cols-[minmax(0,1fr)_64px]" : "xl:grid-cols-[minmax(0,1fr)_440px]"}`}
+            className="grid h-full min-h-0 xl:grid-cols-[minmax(480px,0.92fr)_minmax(520px,1.08fr)]"
           >
-            <div className="min-w-0">
+            <div className="min-w-0 overflow-y-auto border-r border-border bg-card px-4 py-4 sm:px-6">
               {/* Channel tabs — Text and Email each keep their own Direct / OTA sections */}
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <div className="flex gap-1 rounded-md bg-muted p-1">
@@ -275,54 +307,37 @@ export function CampaignEditor({
                   </span>
                 )}
               </div>
-              {/* Audience sections */}
-              <div className="min-w-0 space-y-3">
-                {(["direct", "ota"] as AudienceKey[]).map((key) => {
-                  const active = audience === key;
-                  const v = draft.variants[key];
-                  return (
-                    <section
-                      key={key}
-                      className={`overflow-hidden rounded-lg border bg-card shadow-card transition-colors ${active ? "border-brand/45" : "border-border"}`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAudience(key);
-                          setPanel(null);
-                        }}
-                        aria-expanded={active}
-                        className="flex w-full flex-wrap items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
-                      >
-                        <span
-                          className={`grid size-8 shrink-0 place-items-center rounded-md text-[11px] font-bold ${active ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}
-                        >
-                          {key === "direct" ? "D" : "O"}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-[13.5px] font-semibold text-card-foreground">
-                            {AUDIENCE_LABEL[key]}
-                            {v.customized && (
-                              <span className="ml-1.5 inline-block size-1.5 rounded-full bg-brand align-middle" />
-                            )}
-                          </span>
-                          <span className="block truncate text-[11px] text-muted-foreground">
-                            {v.customization.text || v.customization.email
-                              ? "Customized content"
-                              : "Suggested content"}
-                          </span>
-                        </span>
-                        {!active && (
-                          <span className="hidden text-[11px] text-muted-foreground sm:inline">
-                            Click to edit
-                          </span>
-                        )}
-                      </button>
+              <div className="mb-3 flex items-center gap-1 border-b border-border">
+                {(["direct", "ota"] as AudienceKey[]).map((key) => (
+                  <Button
+                    key={key}
+                    variant="ghost"
+                    size="sm"
+                    className={`rounded-b-none border-b-2 px-3 ${audience === key ? "border-brand text-brand" : "border-transparent text-muted-foreground"}`}
+                    onClick={() => {
+                      setAudience(key);
+                      setPanel(null);
+                    }}
+                  >
+                    {AUDIENCE_LABEL[key]}
+                    {draft.variants[key].customized && (
+                      <span className="size-1.5 rounded-full bg-brand" />
+                    )}
+                  </Button>
+                ))}
+              </div>
 
-                      {active && (
-                        <div className="border-t border-border px-4 py-4">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="ml-auto flex flex-wrap items-center gap-1.5">
+              <section className="min-w-0 border border-border bg-card shadow-card">
+                <div className="flex flex-wrap items-start gap-3 border-b border-border px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold text-card-foreground">
+                      {AUDIENCE_LABEL[audience]}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {variant.customization[activeChannel] ? "Customized content" : "Suggested content"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
                               <Button
                                 variant="brand"
                                 size="sm"
@@ -334,11 +349,9 @@ export function CampaignEditor({
                               </Button>
                               <SectionAction
                                 icon={History}
-                                label="History"
-                                active={panel === "history"}
-                                onClick={() =>
-                                  setPanel((p) => (p === "history" ? null : "history"))
-                                }
+                                label="Compare to previous"
+                                active={rightView === "history"}
+                                onClick={() => setRightView(rightView === "history" ? "preview" : "history")}
                               />
                               <SectionAction
                                 icon={HelpCircle}
@@ -362,28 +375,11 @@ export function CampaignEditor({
                                 <RotateCcw size={13} />
                                 Revert
                               </Button>
-                            </div>
-                          </div>
+                  </div>
+                </div>
 
-                          <div className="mt-3 space-y-3">
-                            {panel === "history" && (
-                              <InfoPanel title="History">
-                                {v.editedBy ? (
-                                  <p className="text-[12px] text-card-foreground">
-                                    Last edited by <strong>{v.editedBy.by}</strong> ·{" "}
-                                    {fullTime(v.editedBy.at)}
-                                  </p>
-                                ) : (
-                                  <p className="text-[12px] text-muted-foreground">
-                                    This section still uses the suggested content — no edits yet.
-                                  </p>
-                                )}
-                                <p className="mt-1.5 text-[11.5px] text-muted-foreground">
-                                  No earlier revisions are recorded yet. Each save records who
-                                  edited and when.
-                                </p>
-                              </InfoPanel>
-                            )}
+                <div className="px-4 py-4">
+                          <div className="space-y-3">
                             {panel === "help" && (
                               <InfoPanel title="Help">
                                 <ul className="space-y-1.5 text-[12px] leading-relaxed text-muted-foreground">
@@ -457,41 +453,57 @@ export function CampaignEditor({
                           <div className="mt-3">
                             {activeChannel === "text" ? (
                               <TextEditor
-                                value={v.text}
+                                value={variant.text}
                                 promotion={activePromotion}
-                                onChange={(text) => setVariant({ ...v, text }, "text")}
+                                onChange={(text) => setVariant({ ...variant, text }, "text")}
                                 onRequestPromotion={() => setPromotionPicker(true)}
                                 onRemovePromotion={() => setPromotion(null)}
                               />
                             ) : (
                               <EmailEditor
-                                value={v.email}
+                                value={variant.email}
                                 promotion={activePromotion}
-                                customized={v.customization.email}
-                                onChange={(email) => setVariant({ ...v, email }, "email")}
+                                customized={variant.customization.email}
+                                onChange={(email) => setVariant({ ...variant, email }, "email")}
                                 onRequestPromotion={() => setPromotionPicker(true)}
                                 onRemovePromotion={() => setPromotion(null)}
                               />
                             )}
                           </div>
-                        </div>
-                      )}
-                    </section>
-                  );
-                })}
-              </div>
+                </div>
+              </section>
             </div>
 
             {/* The selected audience and channel stay fixed while this area switches context. */}
-            <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-              {rightView !== "minimized" && (
+            <div className="relative min-h-[520px] min-w-0 overflow-y-auto bg-canvas p-4 sm:p-5">
+              {rightView !== "ai" && (
                 <>
                   <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                     <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {rightView === "ai" ? "AI editor" : "Preview"} · {AUDIENCE_LABEL[audience]} ·{" "}
+                      {rightView === "history" ? "Previous content" : "Preview"} · {AUDIENCE_LABEL[audience]} ·{" "}
                       {activeChannel === "text" ? "Text" : "Email"}
                     </p>
-                    {rightView !== "preview" && (
+                    {rightView === "history" ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            {selectedHistory?.date ?? "Choose version"}
+                            <ChevronDown size={13} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-64">
+                          {history.map((item) => (
+                            <DropdownMenuItem key={item.id} onSelect={() => setHistoryId(item.id)}>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-[12px] font-semibold">{item.date}</span>
+                                <span className="block truncate text-[10px] text-muted-foreground">{item.note}</span>
+                              </span>
+                              {selectedHistory?.id === item.id && <Check size={13} className="text-brand" />}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : rightView !== "preview" && (
                       <Button variant="ghost" size="sm" onClick={() => setRightView("preview")}>
                         <Eye size={13} />
                         Preview
@@ -501,23 +513,12 @@ export function CampaignEditor({
                 </>
               )}
               {rightView === "minimized" && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setRightView("ai")}
-                  className="group flex h-[520px] w-full flex-col justify-between border border-border bg-card px-2 py-4 shadow-card hover:border-brand/30 hover:bg-card"
-                  aria-label="Expand Directful AI"
-                >
-                  <span className="grid size-9 place-items-center rounded-md bg-brand text-brand-foreground shadow-card">
-                    <Sparkle size={15} />
-                  </span>
-                  <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-semibold text-card-foreground">
-                    Directful AI · {AUDIENCE_LABEL[audience]}
-                  </span>
-                  <Maximize2
-                    size={15}
-                    className="text-brand transition-transform group-hover:scale-110"
-                  />
+                <Button type="button" variant="outline" onClick={() => setRightView("ai")}
+                  className="absolute bottom-5 right-5 z-10 h-auto w-64 justify-start gap-3 border-brand/25 bg-card p-3 text-left shadow-lift"
+                  aria-label="Expand Directful AI">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand text-brand-foreground"><Sparkle size={15} /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-[12px] font-semibold text-card-foreground">Directful AI minimized</span><span className="block truncate text-[10px] text-muted-foreground">{AUDIENCE_LABEL[audience]} · {activeChannel}</span></span>
+                  <Maximize2 size={15} className="text-brand" />
                 </Button>
               )}
               {rightView === "ai" ? (
@@ -562,6 +563,16 @@ export function CampaignEditor({
                   onMinimize={() => setRightView("minimized")}
                   onEditMyself={() => setRightView("preview")}
                 />
+              ) : rightView === "history" && historicalVariant ? (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-border bg-card p-3 shadow-card">
+                    <div><p className="text-[12px] font-semibold text-card-foreground">{selectedHistory?.date}</p><p className="text-[10.5px] text-muted-foreground">{selectedHistory?.note}</p></div>
+                    <Button variant="brand" size="sm" onClick={() => setConfirm("restore")}>Use this version</Button>
+                  </div>
+                  {activeChannel === "text" ? (
+                    <div className="flex justify-center overflow-x-auto pb-2"><SmsPreview message={historicalVariant.text.message} imageUrl={null} sender="Holiday Inn" scale={0.62} promotion={activePromotion} /></div>
+                  ) : <EmailPreview value={historicalVariant.email} promotion={activePromotion} />}
+                </div>
               ) : activeChannel === "text" ? (
                 <div className="flex max-w-full justify-center overflow-x-auto pb-2 lg:justify-start">
                   <SmsPreview
@@ -603,14 +614,18 @@ export function CampaignEditor({
                   ? "Unsaved changes"
                   : confirm === "save"
                     ? "Save changes to active campaign?"
-                    : "Revert content to suggested?"}
+                    : confirm === "restore"
+                      ? `Use the ${selectedHistory?.date ?? "selected"} version?`
+                      : "Revert content to suggested?"}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {confirm === "leave"
                   ? "You have unsaved changes. Leave without saving?"
                   : confirm === "save"
                     ? "This campaign is active. Updated content will be used for future messages sent to eligible guests."
-                    : `Only ${AUDIENCE_LABEL[audience]} ${activeChannel} content for ${draft.name} will return to Directful’s suggested content.`}
+                    : confirm === "restore"
+                      ? `Only ${AUDIENCE_LABEL[audience]} ${activeChannel} content will be copied into your draft. Your other audience and channel content will stay unchanged.`
+                      : `Only ${AUDIENCE_LABEL[audience]} ${activeChannel} content for ${draft.name} will return to Directful’s suggested content.`}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -619,9 +634,9 @@ export function CampaignEditor({
               </AlertDialogCancel>
               <AlertDialogAction
                 className="bg-brand text-brand-foreground hover:bg-brand/90"
-                onClick={confirm === "leave" ? onClose : confirm === "save" ? save : revertCurrent}
+                onClick={confirm === "leave" ? onClose : confirm === "save" ? save : confirm === "restore" ? restoreHistorical : revertCurrent}
               >
-                {confirm === "leave" ? "Leave" : confirm === "save" ? "Save changes" : "Revert"}
+                {confirm === "leave" ? "Leave" : confirm === "save" ? "Save changes" : confirm === "restore" ? "Use this version" : "Revert"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
