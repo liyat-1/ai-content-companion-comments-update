@@ -1,0 +1,49 @@
+import { createServerFn } from "@tanstack/react-start";
+import type { PreparedAttachment } from "./attachments";
+
+type History = { role: "user" | "assistant"; text: string }[];
+
+export type PlanEvent = { name: string; date: string; note: string; kind: "holiday" | "event" };
+export type PlanReply = { reply: string; events: PlanEvent[]; startMonth: number | null; endMonth: number | null; error?: string };
+
+export const planAssist = createServerFn({ method: "POST" })
+  .inputValidator((d: { text: string; files: PreparedAttachment[]; history: History; range: string; plan: string[] }) => d)
+  .handler(async ({ data }): Promise<PlanReply> => {
+    const { askGateway, attachmentParts, parseJson } = await import("./ai.server");
+    const system = `You are the content-planning assistant for Holiday Inn Times Square (New York) inside a hotel guest-messaging tool. You plan seasonal email/text campaigns for returning guests (Direct and OTA). Today is September 2026. Current release window: ${data.range}. Moments currently in the plan: ${data.plan.join(", ") || "none"}.
+Read every attachment carefully (sheets, documents, images, video frames, PDFs) and answer the user's actual request specifically, citing concrete details from the files (names, dates, counts, what an image shows). Keep the reply under 120 words, warm and practical, in markdown.
+Extract any dated events/holidays relevant to guest messaging from the files or prompt.
+Return ONLY JSON: {"reply": string, "events": [{"name": string, "date": "YYYY-MM-DD", "note": string, "kind": "holiday"|"event"}], "startMonth": number|null, "endMonth": number|null}. Months are 0-11 (0=Jan) in 2026; set them only if the user asks to change the release window or the events require it.`;
+    const history = data.history.slice(-6).map((m) => `${m.role}: ${m.text}`).join("\n");
+    try {
+      const text = await askGateway(system, [{ type: "text", text: `${history ? `Conversation so far:\n${history}\n\n` : ""}User: ${data.text || "Please use the attached files."}` }, ...(attachmentParts(data.files) as never[])]);
+      const json = parseJson<PlanReply>(text);
+      if (!json) return { reply: text, events: [], startMonth: null, endMonth: null };
+      return { reply: json.reply ?? "", events: Array.isArray(json.events) ? json.events.slice(0, 60) : [], startMonth: json.startMonth ?? null, endMonth: json.endMonth ?? null };
+    } catch (e) {
+      return { reply: "", events: [], startMonth: null, endMonth: null, error: (e as Error).message };
+    }
+  });
+
+export type EditCopy = { subject?: string; preheader?: string; heading?: string; body?: string; ctaLabel?: string; message?: string };
+export type EditReply = { reply: string; copy: EditCopy | null; changes: string[]; why: string; error?: string };
+
+export const editAssist = createServerFn({ method: "POST" })
+  .inputValidator((d: { text: string; files: PreparedAttachment[]; history: History; kind: "email" | "text"; copy: EditCopy; campaign: string }) => d)
+  .handler(async ({ data }): Promise<EditReply> => {
+    const { askGateway, attachmentParts, parseJson } = await import("./ai.server");
+    const fields = data.kind === "email" ? `{"subject","preheader","heading","body","ctaLabel"}` : `{"message"}`;
+    const system = `You edit guest-messaging copy for Holiday Inn Times Square (New York). Campaign: ${data.campaign}. Channel: ${data.kind}. Keep merge tags like {first_name} and {booking_link} intact. Text messages stay under ~300 characters with one link.
+Current content (JSON): ${JSON.stringify(data.copy)}
+Follow the user's request precisely and use concrete details from any attachments (events, dates, offers, what images show). If the user only asks a question, answer it and return "copy": null.
+Return ONLY JSON: {"reply": string (short, friendly, markdown), "copy": ${fields} | null, "changes": string[] (up to 4 short bullets), "why": string (one sentence)}.`;
+    const history = data.history.slice(-6).map((m) => `${m.role}: ${m.text}`).join("\n");
+    try {
+      const text = await askGateway(system, [{ type: "text", text: `${history ? `Conversation so far:\n${history}\n\n` : ""}User: ${data.text || "Use the attached files to improve this content."}` }, ...(attachmentParts(data.files) as never[])]);
+      const json = parseJson<EditReply>(text);
+      if (!json) return { reply: text, copy: null, changes: [], why: "" };
+      return { reply: json.reply ?? "", copy: json.copy ?? null, changes: json.changes ?? [], why: json.why ?? "" };
+    } catch (e) {
+      return { reply: "", copy: null, changes: [], why: "", error: (e as Error).message };
+    }
+  });
