@@ -204,7 +204,7 @@ export function AutomatedRefresh() {
                 <div className="mt-4 space-y-1 text-[13px]">
                   {x.metrics.slice(0, 2).map((m) => <p key={m.label} className="flex justify-between"><span className="text-muted-foreground">{m.label}</span><Delta m={m} /></p>)}
                 </div>
-                <p className="mt-4 text-[12px]">{xv.reviewed ? <span className="text-success">✓ Reviewed</span> : pb ? <span className="text-warning-foreground">● A previous version performed better</span> : <span className="text-brand">● New recommendation</span>}</p>
+                <p className="mt-4 text-[12px]">{xv.reviewed ? <span className="text-success">✓ Reviewed</span> : pb ? <span className="text-warning">● A previous version performed better</span> : <span className="text-brand">● New recommendation</span>}</p>
                 <div className="mt-4 flex gap-2 pt-1">
                   <Button size="sm" variant="brand" onClick={() => openReview(x.id)}>Review</Button>
                   <Button size="sm" variant="outline" onClick={() => openEdit(x.id)}>Edit content</Button>
