@@ -297,6 +297,7 @@
 - [x] Add tilted Pending Review states and compact card-level performance indicators
 - [x] Open the exact campaign editor with AI active and performance learning prefilled
 - [x] Verify review-to-editor handoff, AI suggestions, compare/apply, and narrow layouts
+- [x] Use guest recognition and planning timing—not an offer—as the AI's outperformance insight
 
 ## V2 recommendation-first review
 

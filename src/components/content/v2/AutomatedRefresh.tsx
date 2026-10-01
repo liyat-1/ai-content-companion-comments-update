@@ -545,13 +545,6 @@ export function AutomatedRefresh() {
     setEntered(true);
   };
   const improveWithAi = () => {
-    const strongest = selectedHistory.content[audience][channelKey(channel)];
-    const strength =
-      strongest.includes("15%") || strongest.includes("10%")
-        ? "a specific offer that gave guests a concrete reason to act"
-        : strongest.toLowerCase().includes("book direct")
-          ? "a clear direct-booking reason and a decisive call to action"
-          : "shorter, more specific wording that made the return invitation easy to understand";
     const editorId =
       campaign.id === "alv"
         ? "after-last-visit"
@@ -560,11 +553,11 @@ export function AutomatedRefresh() {
           : `lost-${campaign.id.replace("m", "")}`;
     setAiEdit({
       id: editorId,
-      context: `${selectedHistory.date} performed better. It worked because it used ${strength}. I’ll keep the current Directful recommendation as the starting point rather than restoring the old copy.`,
+      context: `${selectedHistory.date} performed better because it opened with a vivid memory from the guest’s stay and matched the moment they were likely starting to plan another trip. That sense of recognition made the message feel personal rather than promotional. I’ll keep the current Directful recommendation as the starting point rather than restoring the old copy.`,
       actions: [
-        "Apply the stronger offer idea",
-        "Use the winning tone",
-        "Strengthen the call to action",
+        "Open with a stay memory",
+        "Match the guest’s planning moment",
+        "Make the return feel personal",
       ],
       audience,
       channel,
