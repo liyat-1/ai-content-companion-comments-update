@@ -21,3 +21,4 @@
 - Event photos and per-type icons come from src/components/content/eventImages.ts, shared by starter cards, the visual content plan, and the calendar; images are imported statically (never `new URL(..., import.meta.url)`, which breaks SSR/hydration).
 - Results campaigns are cards with property usage, prior comparison, an AI insight, and Use previous version only when the prior version performed better.
 - Performance-led reuse compares an actual historical copy snapshot with current library copy, then offers an AI-inspired draft for explicit review; never auto-publish a prior version.
+- AI refresh direction cards use human-centered editorial poster illustrations with blue, purple, and pink backgrounds so recommendations feel expressive without photography.
