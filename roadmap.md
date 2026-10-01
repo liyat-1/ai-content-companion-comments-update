@@ -86,7 +86,6 @@
 - [x] Show attached promotions in text and email previews
 - [x] Verify promotion workflows at desktop and mobile widths
 
-
 ## Promotion presentation polish
 
 - [x] Add direct promotion removal inside campaign content editing
@@ -240,12 +239,14 @@
 - [x] Test every file type (sheet, CSV, Word, slides, PDF, photo, video) in both AI panels, plan cards, apply flow
 
 ## Starter screen redesign
+
 - [x] Redesign Content Library opening screen: centered invitation, upcoming events/holidays horizon, two buttons (Localize with AI / Keep current content)
 - [x] Constraints: existing Directful color system, Roboto font, reference image two.jpg for layout vibe
 - [x] Show 3 design options, implement user's pick (fanned card row)
 - [x] Gradient calendar vibe + real event photos on cards; verified both buttons and mobile width — no console errors
 
 ## Updated connected Content system
+
 - [x] Add the shared Events & Holidays calendar workspace and calendar-state-aware starter
 - [x] Replace fixed monthly packages with exact-date Standard, Event-based, and Seasonal periods
 - [x] Align AI planning, generation, review, and publishing around content periods
@@ -279,6 +280,7 @@
 - [x] Typecheck clean; verify in preview, no console errors
 
 ## Content Library V2 page completion
+
 - [x] Make AI notice the first screen and reveal the content schedule only after Keep current or AI update
 - [x] Rebuild the V2 contents view with V1-style schedule header, campaign cards, property adoption, and history navigation
 - [x] Move V2 Results to a separate page and keep metrics there, with review and AI improvement actions
@@ -286,12 +288,14 @@
 - [x] Verify content, Results, and update paths in the preview
 
 ## V2 flow and results refinement
+
 - [x] Present the V2 AI flow in the familiar V1 assistant style with recommendations independent of calendar data
 - [x] Make the first screen month-neutral and clarify the upcoming year-round fallback, with refresh from that month
 - [x] Remove the duplicate Edit AI update control and show all 11 invite campaigns in Results
 - [x] Verify the updated notice, month navigation, AI flow, and Results
 
 ## V2 performance-led AI editing polish
+
 - [x] Restore compact detailed change rationale and selected-date performance comparison
 - [x] Restore filled recommendation highlights with a calmer contrasting treatment
 - [x] Add tilted Pending Review states and compact card-level performance indicators
