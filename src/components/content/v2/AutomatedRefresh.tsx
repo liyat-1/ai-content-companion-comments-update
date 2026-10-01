@@ -100,7 +100,7 @@ const fmt = (n: number) => `${n.toFixed(1)}%`;
 function Delta({ m }: { m: Metric }) {
   const up = m.cur > m.prev; const good = m.lowerIsBetter ? m.cur < m.prev : m.cur > m.prev;
   if (m.cur === m.prev) return <span className="text-muted-foreground">{fmt(m.cur)}</span>;
-  return <span className={good ? "text-success font-semibold" : "text-destructive font-semibold"}>{fmt(m.cur)} {up ? "↑" : "↓"}</span>;
+  return <span className={good ? "text-brand font-semibold" : "text-destructive font-semibold"}>{fmt(m.cur)} {up ? "↑" : "↓"}</span>;
 }
 
 function diffWords(a: string, b: string) {
@@ -187,7 +187,7 @@ export function AutomatedRefresh() {
             <div>
               <h1 className="font-display text-[30px] font-semibold text-card-foreground">Directful’s recommendation</h1>
               <p className="mt-1 text-[14px] text-muted-foreground">Here’s what we refreshed, what changed, and how your content is performing.</p>
-              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-card-foreground"><span className="font-semibold">October 2026</span><span className="text-success">● Published</span><Attribution directful full /></p>
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-card-foreground"><span className="font-semibold">October 2026</span><span className="text-brand">● Published</span><Attribution directful full /></p>
             </div>
             <div className="text-right">
               <p className="text-[13px] font-semibold text-card-foreground">{reviewedCount} of 7 campaigns reviewed</p>
@@ -204,7 +204,7 @@ export function AutomatedRefresh() {
                 <div className="mt-4 space-y-1 text-[13px]">
                   {x.metrics.slice(0, 2).map((m) => <p key={m.label} className="flex justify-between"><span className="text-muted-foreground">{m.label}</span><Delta m={m} /></p>)}
                 </div>
-                <p className="mt-4 text-[12px]">{xv.reviewed ? <span className="text-success">✓ Reviewed</span> : pb ? <span className="text-warning">● A previous version performed better</span> : <span className="text-brand">● New recommendation</span>}</p>
+                <p className="mt-4 text-[12px]">{xv.reviewed ? <span className="text-brand">✓ Reviewed</span> : pb ? <span className="text-warning">● A previous version performed better</span> : <span className="text-brand">● New recommendation</span>}</p>
                 <div className="mt-4 flex gap-2 pt-1">
                   <Button size="sm" variant="brand" onClick={() => openReview(x.id)}>Review</Button>
                   <Button size="sm" variant="outline" onClick={() => openEdit(x.id)}>Edit content</Button>
@@ -255,7 +255,7 @@ export function AutomatedRefresh() {
               </div>
             </div>
           ) : (
-            <div className="rounded-md border border-success/40 bg-success/10 p-5">
+            <div className="rounded-md border border-brand/30 bg-brand/5 p-5">
               <h3 className="text-[15px] font-semibold text-card-foreground">Your content is performing better</h3>
               <p className="mt-1 text-[14px] text-card-foreground">This version is generating stronger engagement than the previous version. Click-to-book: previous {fmt(c.metrics[1].prev)} · current <Delta m={c.metrics[1]} /></p>
             </div>
