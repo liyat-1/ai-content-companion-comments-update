@@ -355,11 +355,11 @@ export function V2Results({
                       onClick={() =>
                         onImprove(
                           c.id,
-                          `${c.prior?.label} performed better because its message was concise, specific, and gave guests a clear reason to act. Keep the current Directful recommendation as the baseline.`,
+                          `${c.prior?.label} performed better because it recalled a recognizable moment from the guest’s stay and reached them when they were likely planning another trip. That familiarity made the message feel personally relevant rather than promotional. Keep the current Directful recommendation as the baseline.`,
                           [
-                            "Use the winning message structure",
-                            "Bring forward the strongest idea",
-                            "Strengthen the current call to action",
+                            "Open with a stay memory",
+                            "Match the guest’s planning moment",
+                            "Make the return feel personal",
                           ],
                         )
                       }
