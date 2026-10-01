@@ -289,14 +289,14 @@
 - [x] Present the V2 AI flow in the familiar V1 assistant style with recommendations independent of calendar data
 - [x] Make the first screen month-neutral and clarify the upcoming year-round fallback, with refresh from that month
 - [x] Remove the duplicate Edit AI update control and show all 11 invite campaigns in Results
-- [ ] Verify the updated notice, month navigation, AI flow, and Results
+- [x] Verify the updated notice, month navigation, AI flow, and Results
 
 ## V2 performance-led AI editing polish
 - [x] Restore compact detailed change rationale and selected-date performance comparison
 - [x] Restore filled recommendation highlights with a calmer contrasting treatment
 - [x] Add tilted Pending Review states and compact card-level performance indicators
 - [x] Open the exact campaign editor with AI active and performance learning prefilled
-- [ ] Verify review-to-editor handoff, AI suggestions, compare/apply, and narrow layouts
+- [x] Verify review-to-editor handoff, AI suggestions, compare/apply, and narrow layouts
 
 ## V2 recommendation-first review
 
