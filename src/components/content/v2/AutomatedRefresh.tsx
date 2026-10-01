@@ -9,6 +9,7 @@ import {
   Mail,
   MessageSquareText,
   Sparkles,
+  TrendingDown,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { AiMark } from "@/components/content/shared";
+import { CampaignEditor } from "@/components/marketing/CampaignEditor";
 import { V2Workspace } from "./V2Workspace";
 
 type Audience = "Direct" | "OTA";
@@ -177,7 +179,7 @@ function wordDiff(previous: string, current: string): { previous: DiffPart[]; cu
 }
 
 function DiffText({ parts }: { parts: DiffPart[] }) {
-  return <>{parts.map((part, index) => <span key={`${part.text}-${index}`} className={part.kind === "removed" ? "opacity-60 line-through decoration-warning/70" : part.kind === "added" ? "font-semibold underline decoration-highlight decoration-2 underline-offset-2" : ""}>{part.text}</span>)}</>;
+  return <>{parts.map((part, index) => <span key={`${part.text}-${index}`} className={part.kind === "removed" ? "opacity-60 line-through decoration-warning/70" : part.kind === "added" ? "rounded-sm bg-highlight px-0.5 font-semibold text-highlight-foreground" : ""}>{part.text}</span>)}</>;
 }
 
 function emailFields(body: string, current: boolean) {
@@ -224,6 +226,7 @@ export function AutomatedRefresh() {
   const [audience, setAudience] = useState<Audience>("Direct");
   const [channel, setChannel] = useState<Channel>("Email");
   const [historyId, setHistoryId] = useState<Record<string, string>>({});
+  const [aiEdit, setAiEdit] = useState<{ id: string; context: string; actions: string[]; audience: Audience; channel: Channel } | null>(null);
 
   const campaign = CAMPAIGNS.find((item) => item.id === reviewId) ?? CAMPAIGNS[0];
   const selectedHistory = campaign.history.find((item) => item.id === historyId[campaign.id]) ?? campaign.history[0];
@@ -244,6 +247,24 @@ export function AutomatedRefresh() {
   };
   const usePrevious = () => {
     patch(campaign.id, { reviewed: true, current: selectedHistory.content });
+    setReviewId(null);
+    setEntered(true);
+  };
+  const improveWithAi = () => {
+    const strongest = selectedHistory.content[audience][channelKey(channel)];
+    const strength = strongest.includes("15%") || strongest.includes("10%")
+      ? "a specific offer that gave guests a concrete reason to act"
+      : strongest.toLowerCase().includes("book direct")
+        ? "a clear direct-booking reason and a decisive call to action"
+        : "shorter, more specific wording that made the return invitation easy to understand";
+    const editorId = campaign.id === "alv" ? "after-last-visit" : campaign.id === "m15p" ? "lost-15-plus" : `lost-${campaign.id.replace("m", "")}`;
+    setAiEdit({
+      id: editorId,
+      context: `${selectedHistory.date} performed better. It worked because it used ${strength}. I’ll keep the current Directful recommendation as the starting point rather than restoring the old copy.`,
+      actions: ["Apply the stronger offer idea", "Use the winning tone", "Strengthen the call to action"],
+      audience,
+      channel,
+    });
     setReviewId(null);
     setEntered(true);
   };
@@ -276,11 +297,12 @@ export function AutomatedRefresh() {
           <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">Live signal</p><h3 className="mt-0.5 text-[15px] font-semibold text-card-foreground">How it’s performing</h3></div><span className={`rounded-sm px-2.5 py-1.5 text-[10px] font-semibold ${result === "previous-better" ? "bg-warning-soft text-warning" : "bg-brand-soft text-brand"}`}>{result === "better" ? "Recommendation performing better" : result === "previous-better" ? `${selectedHistory.date} performed better` : "Performing in line"}</span></div>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">{campaign.metrics.map((metric) => { const improved = metric.lowerIsBetter ? metric.cur < metric.prev : metric.cur > metric.prev; return <div key={metric.label} className="rounded-sm border border-border p-3"><p className="text-[10px] font-semibold text-muted-foreground">{metric.label}</p><div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-end gap-2"><div><p className="text-[9px] text-muted-foreground">{selectedHistory.date.split(",")[0]}</p><p className="text-[14px] font-semibold text-card-foreground">{fmt(metric.prev)}</p></div><ArrowRightIcon size={13} className="mb-1 text-muted-foreground" /><div className="text-right"><p className="text-[9px] text-muted-foreground">Recommendation</p><p className={`text-[14px] font-semibold ${improved ? "text-brand" : metric.cur === metric.prev ? "text-card-foreground" : "text-warning"}`}>{fmt(metric.cur)} {improved ? (metric.lowerIsBetter ? "↓" : "↑") : metric.cur === metric.prev ? "" : metric.lowerIsBetter ? "↑" : "↓"}</p></div></div></div>; })}</div>
           <p className="mt-3 text-[10px] leading-4 text-muted-foreground">Directful’s recommendation is compared with the selected {selectedHistory.date} version across participating properties.</p>
-          {result === "previous-better" && <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3"><Button variant="brand" size="sm" onClick={() => { const field = channelKey(channel); const inspired = `${recommendedCopy} ${selectedHistory.content[audience][field].split(". ")[0]}.`; patch(campaign.id, { reviewed: true, current: { ...currentContent, [audience]: { ...currentContent[audience], [field]: inspired } } }); }}>Improve with AI</Button><Button variant="outline" size="sm" onClick={usePrevious}>Use this version & publish</Button></div>}
+          {result === "previous-better" && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3"><span className="mr-auto inline-flex items-center gap-1 text-[10px] font-semibold text-warning"><TrendingDown size={12} />Recommendation is trailing this version</span><Button variant="brand" size="sm" onClick={improveWithAi}>Improve with AI</Button><Button variant="outline" size="sm" onClick={usePrevious}>Use this version & publish</Button></div>}
         </section>
         {selectedHistory.id !== campaign.history[0].id && result !== "previous-better" && <div className="mt-3 flex justify-end"><Button variant="outline" size="sm" onClick={usePrevious}>Use this version & publish</Button></div>}
         <div className="mt-4 flex justify-end border-t border-border pt-3"><Button variant="outline" onClick={closeReview}><X size={14} />Close</Button></div>
       </div>
     </DialogContent></Dialog>
+    {aiEdit && <CampaignEditor id={aiEdit.id} initialAiContext={aiEdit.context} initialAiActions={aiEdit.actions} initialAudience={aiEdit.audience.toLowerCase() as "direct" | "ota"} initialChannel={aiEdit.channel.toLowerCase() as "email" | "text"} onClose={() => setAiEdit(null)} />}
   </MarketingShell>;
 }
