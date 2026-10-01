@@ -17,7 +17,6 @@ import { SmsPreview } from "@/components/editor/SmsPreview";
 import { checkContent } from "./contentChecks";
 import { AiEditPanel } from "@/components/ai/AiEditPanel";
 import { Sparkle } from "@/components/ai/Sparkle";
-import type { Copy } from "@/lib/aiWriter";
 import { campaignHistory } from "@/lib/campaignHistory";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +41,6 @@ import {
   STRATEGY_LABEL,
   defaultVariant,
   effectivePromotion,
-  fullTime,
   mutate,
   strategyHasEmail,
   useMarketing,
@@ -369,7 +367,7 @@ export function CampaignEditor({
                                 variant="ghost"
                                 size="sm"
                                 className="px-2"
-                                disabled={!v.customization[activeChannel]}
+                                disabled={!variant.customization[activeChannel]}
                                 onClick={() => setConfirm("revert")}
                               >
                                 <RotateCcw size={13} />
@@ -476,7 +474,7 @@ export function CampaignEditor({
 
             {/* The selected audience and channel stay fixed while this area switches context. */}
             <div className="relative min-h-[520px] min-w-0 overflow-y-auto bg-canvas p-4 sm:p-5">
-              {rightView !== "ai" && (
+              {rightView !== "ai" && rightView !== "minimized" && (
                 <>
                   <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                     <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
