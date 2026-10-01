@@ -116,7 +116,7 @@ const DirectionArt = ({ id }: { id: string }) => {
     <span className={`absolute inset-0 overflow-hidden ${id === "seasonal" ? "bg-poster-purple" : id === "guest" ? "bg-poster-pink" : "bg-poster-blue"}`} aria-hidden="true">
       <span className="absolute -right-8 -top-8 size-32 rounded-full border-[22px] border-poster-copy/10" />
       <span className="absolute left-5 top-7 size-4 rounded-full bg-poster-copy/25" />
-      <svg viewBox="0 0 220 170" className="absolute inset-x-0 top-1 h-[58%] w-full transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-[1.03]">
+      <svg viewBox="0 0 220 170" className="absolute inset-x-0 top-1 !h-[58%] !w-full transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-[1.03]">
         {scene}
       </svg>
     </span>
