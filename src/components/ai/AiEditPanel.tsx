@@ -63,6 +63,8 @@ export function Diff({ before, after }: { before: string; after: string }) {
 export function AiEditPanel({
   title,
   copy,
+  initialContext,
+  suggestedActions,
   onApply,
   onClose,
   onEditMyself,
@@ -72,6 +74,8 @@ export function AiEditPanel({
 }: {
   title: string;
   copy: Copy;
+  initialContext?: string;
+  suggestedActions?: string[];
   onApply: (copy: Copy) => void;
   onClose: () => void;
   onEditMyself?: () => void;
@@ -80,7 +84,9 @@ export function AiEditPanel({
   onMinimize?: () => void;
 }) {
   const [msgs, setMsgs] = useState<Msg[]>([
-    { role: "ai", text: `I'm working on the current ${copy.kind === "email" ? "email" : "text message"} for ${title} — including any edits you've made. What would you like to change?` },
+    { role: "ai", text: initialContext
+      ? `${initialContext}\n\nWould you like me to apply that strength to the current Directful suggestion?`
+      : `I'm working on the current ${copy.kind === "email" ? "email" : "text message"} for ${title} — including any edits you've made. What would you like to change?` },
   ]);
   const [input, setInput] = useState("");
   const [seed, setSeed] = useState(0);
@@ -191,7 +197,7 @@ export function AiEditPanel({
                        <Button size="sm" variant="brand" onClick={() => { if (!m.proposal) return; onApply(m.proposal.copy); setState(idx, "applied"); }}><Check size={13} />Apply changes</Button>
                       <Button size="sm" variant="outline" onClick={() => { setState(idx, "kept"); setFeedbackFor(idx); }}>Keep current</Button>
                       <Button size="sm" variant="ghost" onClick={() => ask(lastRequest, { retry: true })}><RefreshCw size={12} />Try another</Button>
-                      <Button size="sm" variant="ghost" onClick={() => setCompareIdx(compareIdx === idx ? null : idx)}><GitCompare size={12} />{compareIdx === idx ? "Hide changes" : "Compare"}</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setCompareIdx(compareIdx === idx ? null : idx)}><GitCompare size={12} />{compareIdx === idx ? "Hide changes" : "See changes"}</Button>
                       {onEditMyself && <Button size="sm" variant="ghost" onClick={onEditMyself}><Pencil size={12} />Edit myself</Button>}
                     </div>
                   )}
@@ -215,6 +221,13 @@ export function AiEditPanel({
       </div>
 
       <div className="border-t border-border/70 bg-card px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
+        {suggestedActions?.length ? (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {suggestedActions.slice(0, 3).map((action) => (
+              <Button key={action} variant="outline" size="sm" className="h-auto whitespace-normal px-2.5 py-1.5 text-left text-[11.5px]" onClick={() => void ask(action)}>{action}</Button>
+            ))}
+          </div>
+        ) : null}
         <div className="mb-3 grid grid-cols-2 gap-2">
           <Button variant="ghost" size="sm" onClick={() => setShowPersonalize((v) => !v)} className="shrink-0 px-2 text-[12px]">
           <SlidersHorizontal size={13} />Personalize<ChevronDown size={13} className={`transition-transform ${showPersonalize ? "rotate-180" : ""}`} />

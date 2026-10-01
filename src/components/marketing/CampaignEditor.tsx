@@ -75,18 +75,18 @@ function InfoPanel({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-export function CampaignEditor({ id, onClose }: { id: string; onClose: () => void }) {
+export function CampaignEditor({ id, onClose, initialAiContext, initialAiActions, initialAudience = "direct", initialChannel = "text" }: { id: string; onClose: () => void; initialAiContext?: string; initialAiActions?: string[]; initialAudience?: AudienceKey; initialChannel?: "text" | "email" }) {
   const marketing = useMarketing();
   const { campaigns } = marketing;
   const source = campaigns.find((campaign) => campaign.id === id);
   const [draft, setDraft] = useState<MarketingCampaign | null>(() => source ? clone(source) : null);
   const [baseline, setBaseline] = useState(() => source ? JSON.stringify(source) : "");
-  const [audience, setAudience] = useState<AudienceKey>("direct");
-  const [channel, setChannel] = useState<"text" | "email">("text");
+  const [audience, setAudience] = useState<AudienceKey>(initialAudience);
+  const [channel, setChannel] = useState<"text" | "email">(initialChannel);
   const [panel, setPanel] = useState<Panel>(null);
   const [confirm, setConfirm] = useState<"leave" | "save" | "revert" | null>(null);
   const [promotionPicker, setPromotionPicker] = useState(false);
-  const [rightView, setRightView] = useState<"preview" | "ai" | "minimized">("preview");
+  const [rightView, setRightView] = useState<"preview" | "ai" | "minimized">(initialAiContext ? "ai" : "preview");
   const dirty = useMemo(() => draft ? JSON.stringify(draft) !== baseline : false, [draft, baseline]);
 
   useEffect(() => {
@@ -329,6 +329,8 @@ export function CampaignEditor({ id, onClose }: { id: string; onClose: () => voi
             {rightView === "ai" ? <AiEditPanel
               embedded
               title={`${draft.name} · ${AUDIENCE_LABEL[audience]}`}
+              initialContext={initialAiContext}
+              suggestedActions={initialAiActions}
               copy={activeChannel === "email" ? { kind: "email", email: { subject: variant.email.subject, preheader: variant.email.preheader, heading: variant.email.heading, body: variant.email.body, ctaLabel: variant.email.ctaLabel } } : { kind: "text", text: { message: variant.text.message } }}
               onApply={(next) => setVariant(next.kind === "email" ? { ...variant, email: { ...variant.email, subject: next.email.subject, preheader: next.email.preheader, heading: next.email.heading, body: next.email.body, ctaLabel: next.email.ctaLabel } } : { ...variant, text: { ...variant.text, message: next.text.message } }, activeChannel)}
               onClose={() => setRightView("preview")}
