@@ -324,8 +324,8 @@ export function CampaignEditor({
               </div>
 
               <section className="min-w-0 border border-border bg-card shadow-card">
-                <div className="flex flex-wrap items-start gap-3 border-b border-border px-4 py-3">
-                  <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-2.5 border-b border-border px-4 py-3">
+                  <div className="min-w-0">
                     <p className="text-[13.5px] font-semibold text-card-foreground">
                       {AUDIENCE_LABEL[audience]}
                     </p>
