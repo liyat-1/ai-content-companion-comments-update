@@ -310,3 +310,10 @@
 - [x] Replace previous/next campaign comparison with selectable publication history, defaulting to the replaced version
 - [x] Enrich change rationale, performance comparison, property adoption, close, review, and edit actions
 - [x] Polish and verify the announcement and recommendation detail at desktop and narrow widths
+
+## Campaign editor and AI panel upgrade
+
+- [ ] Recompose the campaign editor as a balanced split workspace matching the supplied reference
+- [ ] Replace the live preview with the standard AI panel and add a compact docked minimized state
+- [ ] Add dated previous-version selection, dynamic preview, and selected-channel restoration
+- [ ] Verify direct and performance-led entry across desktop and narrow layouts
