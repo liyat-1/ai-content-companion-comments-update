@@ -302,13 +302,13 @@ export function AiEditPanel({
           </div>
         </header>
 
-        <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 ${isEmptyState ? "grid place-items-center" : "space-y-6"}`}>
+        <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 ${isEmptyState ? "flex flex-col" : "space-y-6"}`}>
           {isEmptyState ? (
-            <div className="mx-auto max-w-md text-center">
-              <span className="mx-auto grid size-11 place-items-center rounded-md bg-brand text-brand-foreground shadow-card">
+            <div className="m-auto max-w-md py-2 text-center">
+              <span className="mx-auto grid size-10 place-items-center rounded-md bg-brand text-brand-foreground shadow-card">
                 <Sparkle size={19} />
               </span>
-              <h3 className="mt-5 font-display text-[26px] font-semibold leading-tight text-card-foreground">
+              <h3 className="mt-3 font-display text-[22px] font-semibold leading-tight text-card-foreground">
                 What would you like to update?
               </h3>
               <p className="mx-auto mt-2 max-w-sm text-[12.5px] leading-relaxed text-muted-foreground">
