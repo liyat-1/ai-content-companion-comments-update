@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Mail, MessageSquare, Sparkles, Users } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Mail, MessageSquare, Sparkles, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CampaignEditor } from "@/components/marketing/CampaignEditor";
@@ -22,6 +22,11 @@ const REFRESH_IDS: Record<string, string> = {
   "lost-12": "m12",
   "lost-15": "m15",
   "lost-15-plus": "m15p",
+};
+
+const PERFORMANCE: Record<string, "up" | "down" | "steady"> = {
+  "after-last-visit": "up", "lost-3": "up", "lost-6": "up", "lost-9": "down",
+  "lost-12": "up", "lost-15": "up", "lost-15-plus": "down",
 };
 
 export function V2Workspace({ onReview, reviewedCampaigns = [] }: { onReview?: (id: string) => void; reviewedCampaigns?: string[] }) {
@@ -97,10 +102,13 @@ export function V2Workspace({ onReview, reviewedCampaigns = [] }: { onReview?: (
               const email = campaign.id === "after-last-visit" ? selected.copy.email : libraryCampaign?.content.direct.email;
               const refreshId = REFRESH_IDS[campaign.id];
               const reviewed = refreshId ? reviewedCampaigns.includes(refreshId) : false;
+              const performance = PERFORMANCE[campaign.id] ?? "steady";
 
-              return <article key={campaign.id} className={`flex min-h-[240px] flex-col overflow-hidden rounded-lg border shadow-card transition-colors ${reviewed ? "border-border bg-card hover:border-brand/30" : "border-warning/35 bg-warning-soft/20 hover:border-warning/55"}`}>
-                <div className="flex-1 p-4"><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">{campaign.strategy === "text" ? <MessageSquare size={15} /> : <Mail size={15} />}</span><div className="min-w-0"><h4 className="text-[14px] font-semibold text-card-foreground">{campaign.name}</h4><p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground"><Clock3 size={12} />{campaign.timing}</p></div></div>{refreshId && (reviewed ? <span className="flex items-center gap-1 rounded-sm bg-brand-soft px-1.5 py-0.5 text-[10px] font-bold text-brand"><Check size={11} /> Reviewed</span> : <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">Pending</span>)}</div><div className="mt-4 rounded-md bg-canvas p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Text preview</p><p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-card-foreground">“{fill(text)}”</p></div></div>
+              return <article key={campaign.id} className={`relative flex min-h-[240px] flex-col overflow-hidden rounded-lg border shadow-card transition-colors ${reviewed ? "border-border bg-card hover:border-brand/30" : "border-warning/45 bg-warning-soft/20 hover:border-warning/60"}`}>
+                {!reviewed && refreshId && <span aria-hidden className="absolute -right-9 top-3 h-5 w-28 rotate-12 bg-warning/15" />}
+                <div className="flex-1 p-4"><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">{campaign.strategy === "text" ? <MessageSquare size={15} /> : <Mail size={15} />}</span><div className="min-w-0"><h4 className="text-[14px] font-semibold text-card-foreground">{campaign.name}</h4><p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground"><Clock3 size={12} />{campaign.timing}</p></div></div>{refreshId && (reviewed ? <span className="flex items-center gap-1 rounded-sm bg-brand-soft px-1.5 py-0.5 text-[10px] font-bold text-brand"><Check size={11} /> Reviewed</span> : <span className="relative -rotate-2 rounded-sm bg-warning px-2 py-1 text-[10px] font-bold text-warning-soft shadow-card">Pending Review</span>)}</div><div className="mt-4 rounded-md bg-canvas p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Text preview</p><p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-card-foreground">“{fill(text)}”</p></div></div>
                 <div className="flex flex-wrap items-center gap-1 border-t border-border p-2">
+                  <span className={`mr-auto inline-flex items-center gap-1 px-1.5 text-[10px] font-semibold ${performance === "down" ? "text-warning" : performance === "up" ? "text-brand" : "text-muted-foreground"}`}>{performance === "down" ? <TrendingDown size={12} /> : <TrendingUp size={12} />}{performance === "down" ? "Declining" : performance === "up" ? "Improving" : "Steady"}</span>
                   <Button size="sm" variant="ghost" onClick={() => setEditing(campaign.id)}>Edit content</Button>
                   {refreshId && onReview && (
                     <Button size="sm" variant="brand" className="ml-auto" onClick={() => onReview(refreshId)}>

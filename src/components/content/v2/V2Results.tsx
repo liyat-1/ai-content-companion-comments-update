@@ -26,7 +26,7 @@ const CAMPAIGN_RESULTS: Record<string, CampaignResult[]> = {
   ],
 };
 
-export function V2Results({ onImprove }: { onImprove: (learning: string) => void }) {
+export function V2Results({ onImprove }: { onImprove: (campaignId: string, learning: string, actions: string[]) => void }) {
   const { periods } = useV2();
   const { campaigns: allCampaigns } = useMarketing();
   const [mi, setMi] = useState(RESULTS_MONTHS.length - 1);
@@ -101,7 +101,7 @@ export function V2Results({ onImprove }: { onImprove: (learning: string) => void
                    <p className="mt-0.5 text-[12.5px] text-muted-foreground">{alv.prior.label} clicked {alv.prior.click}% vs {alv.click}% for {alv.name}. Review both messages, then use what worked to write the next version.</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button size="sm" variant="outline" onClick={() => setReviewOpen(true)}>Review {alv.prior.label} version</Button>
-                   <Button size="sm" variant="brand" onClick={() => onImprove(improvementLearning)}><Sparkle size={13} />Improve with AI<ArrowRight size={13} /></Button>
+                   <Button size="sm" variant="brand" onClick={() => onImprove(alv.id, improvementLearning, ["Use the concise return invitation", "Keep the direct-booking CTA", "Add a timely new reason to return"])}><Sparkle size={13} />Improve with AI<ArrowRight size={13} /></Button>
                   </div>
                 </div>
               </div>
@@ -126,7 +126,7 @@ export function V2Results({ onImprove }: { onImprove: (learning: string) => void
               </div>
               {c.priorBetter && c.prior && (
                 <div className="mt-3 border-t border-border pt-3">
-                   <Button size="sm" variant="outline" onClick={() => { setTab("overview"); setReviewOpen(true); }}>Review previous version ({c.prior.label} · {c.prior.click}% clicks)</Button>
+                  <div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-warning"><TrendingUp size={12} className="rotate-90" />Declining vs {c.prior.label}</span><Button size="sm" variant="outline" className="ml-auto" onClick={() => { setTab("overview"); setReviewOpen(true); }}>Review previous version ({c.prior.click}% clicks)</Button><Button size="sm" variant="brand" onClick={() => onImprove(c.id, `${c.prior?.label} performed better because its message was concise, specific, and gave guests a clear reason to act. Keep the current Directful recommendation as the baseline.`, ["Use the winning message structure", "Bring forward the strongest idea", "Strengthen the current call to action"])}><Sparkle size={12} />Improve with AI</Button></div>
                 </div>
               )}
             </article>
@@ -159,7 +159,7 @@ export function V2Results({ onImprove }: { onImprove: (learning: string) => void
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setReviewOpen(false)}>Close</Button>
-             <Button variant="brand" onClick={() => { setReviewOpen(false); if (improvementLearning) onImprove(improvementLearning); }}>Write next update in this direction</Button>
+             <Button variant="brand" onClick={() => { setReviewOpen(false); if (improvementLearning && alv) onImprove(alv.id, improvementLearning, ["Use the concise return invitation", "Keep the direct-booking CTA", "Add a timely new reason to return"]); }}>Improve current suggestion with AI</Button>
           </div>
         </DialogContent>
       </Dialog>
