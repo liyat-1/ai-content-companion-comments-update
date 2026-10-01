@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Mail, MessageSquare, Pencil, Sparkles, Users } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Mail, MessageSquare, Pencil, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CampaignEditor } from "@/components/marketing/CampaignEditor";
@@ -15,11 +15,23 @@ import {
   HOTEL, TOTAL_PROPERTIES, USAGE_ROWS, dismissPusher, publishPeriod, useHistoricalVersion, useV2,
   type Period, type PeriodCopy,
 } from "@/lib/contentV2";
+import { useStore } from "./AutomatedRefresh";
 
-export function V2Workspace() {
+const REFRESH_IDS: Record<string, string> = {
+  "after-last-visit": "alv",
+  "lost-3": "m3",
+  "lost-6": "m6",
+  "lost-9": "m9",
+  "lost-12": "m12",
+  "lost-15": "m15",
+  "lost-15-plus": "m15p",
+};
+
+export function V2Workspace({ onReview }: { onReview?: (id: string) => void }) {
   const v2 = useV2();
   const { campaigns } = useMarketing();
   const { campaigns: libraryCampaigns } = useLibrary();
+  const { state: refreshState } = useStore();
   const [entered, setEntered] = useState(false);
   useEffect(() => { if (window.sessionStorage.getItem("content-v2-entered") === "true") setEntered(true); }, []);
   const revealContent = () => { window.sessionStorage.setItem("content-v2-entered", "true"); setEntered(true); };
@@ -86,11 +98,25 @@ export function V2Workspace() {
             {selected.aiAssisted && selected.preferences && <div className="flex flex-wrap items-start gap-3 border-l-2 border-brand bg-brand-soft/30 px-4 py-3 text-[12px]"><Sparkles size={15} className="mt-0.5 shrink-0 text-brand" /><div><p className="font-semibold text-card-foreground">How this version was written</p><p className="mt-0.5 text-muted-foreground">Tone: {selected.preferences.tone} · Direction: {selected.preferences.direction}{selected.preferences.note ? ` · “${selected.preferences.note}”` : ""}{selected.preferences.context ? ` · Inspired by: ${selected.preferences.context}` : ""}</p></div></div>}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{invites.map((campaign) => {
               const libraryCampaign = libraryCampaigns.find((item) => EDITOR_ID[item.id] === campaign.id);
-               const text = campaign.id === "after-last-visit" ? selected.copy.text : selected.status !== "Upcoming" && libraryCampaign && pack ? packageSnippet(libraryCampaign, pack, "direct") : campaign.variants.direct.text.message;
+              const text = campaign.id === "after-last-visit" ? selected.copy.text : selected.status !== "Upcoming" && libraryCampaign && pack ? packageSnippet(libraryCampaign, pack, "direct") : campaign.variants.direct.text.message;
               const email = campaign.id === "after-last-visit" ? selected.copy.email : libraryCampaign?.content.direct.email;
+              const refreshId = REFRESH_IDS[campaign.id];
+              const reviewed = refreshId ? Boolean(refreshState[refreshId]?.reviewed) : false;
+
               return <article key={campaign.id} className="flex min-h-[240px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-card transition-colors hover:border-brand/30">
-                <div className="flex-1 p-4"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">{campaign.strategy === "text" ? <MessageSquare size={15} /> : <Mail size={15} />}</span><div className="min-w-0"><h4 className="text-[14px] font-semibold text-card-foreground">{campaign.name}</h4><p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground"><Clock3 size={12} />{campaign.timing}</p></div></div><div className="mt-4 rounded-md bg-canvas p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Text preview</p><p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-card-foreground">“{fill(text)}”</p></div></div>
-                <div className="flex flex-wrap items-center gap-1 border-t border-border p-2"><Button size="sm" variant="ghost" onClick={() => setContentOpen({ name: campaign.name, text, email })}>View content</Button><Button size="sm" variant="ghost" onClick={() => setTesting(campaign.id)}>Test</Button><Button size="sm" variant="brand" className="ml-auto" onClick={() => setEditing(campaign.id)}><Pencil size={13} />Edit content</Button></div>
+                <div className="flex-1 p-4"><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">{campaign.strategy === "text" ? <MessageSquare size={15} /> : <Mail size={15} />}</span><div className="min-w-0"><h4 className="text-[14px] font-semibold text-card-foreground">{campaign.name}</h4><p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground"><Clock3 size={12} />{campaign.timing}</p></div></div>{refreshId && (reviewed ? <span className="flex items-center gap-1 rounded-sm bg-brand-soft px-1.5 py-0.5 text-[10px] font-bold text-brand"><Check size={11} /> Reviewed</span> : <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">Pending</span>)}</div><div className="mt-4 rounded-md bg-canvas p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Text preview</p><p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-card-foreground">“{fill(text)}”</p></div></div>
+                <div className="flex flex-wrap items-center gap-1 border-t border-border p-2">
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(campaign.id)}>Edit content</Button>
+                  {refreshId && onReview ? (
+                    <Button size="sm" variant="brand" className="ml-auto" onClick={() => onReview(refreshId)}>
+                      {reviewed ? "Review content" : "Review content"}
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="brand" className="ml-auto" onClick={() => setEditing(campaign.id)}>
+                      <Pencil size={13} /> Edit content
+                    </Button>
+                  )}
+                </div>
               </article>;
             })}</div>
             {selected.status === "Previous" && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5"><p className="text-[12px] text-muted-foreground">This version is kept in your content history.</p><Button variant="outline" onClick={() => setConfirmUse(selected)}>Review & use this version</Button></div>}
