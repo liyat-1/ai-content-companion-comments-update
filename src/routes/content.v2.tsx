@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { V2Workspace } from "@/components/content/v2/V2Workspace";
+import { AutomatedRefresh } from "@/components/content/v2/AutomatedRefresh";
 
 export const Route = createFileRoute("/content/v2")({
   head: () => ({
@@ -12,5 +12,5 @@ export const Route = createFileRoute("/content/v2")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: V2Workspace,
+  component: AutomatedRefresh,
 });
