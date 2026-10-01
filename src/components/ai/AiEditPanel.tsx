@@ -145,6 +145,7 @@ export function AiEditPanel({
   };
 
   const [busy, setBusy] = useState(false);
+  const isEmptyState = !initialContext && msgs.length === 1;
   const ask = async (
     request: string,
     opts?: { personalize?: Personalize; retry?: boolean },
@@ -313,8 +314,31 @@ export function AiEditPanel({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-5">
-          {msgs.map((m, idx) =>
+        <div className={`min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-5 ${isEmptyState ? "grid place-items-center" : "space-y-6"}`}>
+          {isEmptyState ? (
+            <div className="mx-auto max-w-md text-center">
+              <span className="mx-auto grid size-11 place-items-center rounded-md bg-brand text-brand-foreground shadow-card">
+                <Sparkle size={19} />
+              </span>
+              <h3 className="mt-5 font-display text-[26px] font-semibold leading-tight text-card-foreground">
+                What would you like to update?
+              </h3>
+              <p className="mx-auto mt-2 max-w-sm text-[12.5px] leading-relaxed text-muted-foreground">
+                I’m working from the current {copy.kind === "email" ? "email" : "text message"}. Pick a direction or describe the change below.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-1.5">
+                {EDIT_QUICK_ACTIONS.filter(
+                  (action) => copy.kind === "email" || !/subject|text version/i.test(action),
+                )
+                  .slice(0, 6)
+                  .map((action) => (
+                    <Button key={action} variant="outline" size="sm" className="rounded-full text-[11px]" onClick={() => void ask(action)}>
+                      {action}
+                    </Button>
+                  ))}
+              </div>
+            </div>
+          ) : msgs.map((m, idx) =>
             m.role === "user" ? (
               <div key={idx}>
                 <SentThumbs files={m.files} />
