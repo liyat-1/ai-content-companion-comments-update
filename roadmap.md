@@ -293,8 +293,8 @@
 
 ## V2 recommendation-first review
 
-- [ ] Open the focused recommendation detail directly from the announcement instead of a campaign overview
-- [ ] Add Email/Text previews and Direct/OTA audience controls using campaign-specific content
-- [ ] Replace previous/next campaign comparison with selectable publication history, defaulting to the replaced version
-- [ ] Enrich change rationale, performance comparison, property adoption, close, review, and edit actions
-- [ ] Polish and verify the announcement and recommendation detail at desktop and narrow widths
+- [x] Open the focused recommendation detail directly from the announcement instead of a campaign overview
+- [x] Add Email/Text previews and Direct/OTA audience controls using campaign-specific content
+- [x] Replace previous/next campaign comparison with selectable publication history, defaulting to the replaced version
+- [x] Enrich change rationale, performance comparison, property adoption, close, review, and edit actions
+- [x] Polish and verify the announcement and recommendation detail at desktop and narrow widths

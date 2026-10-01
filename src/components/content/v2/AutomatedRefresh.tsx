@@ -280,7 +280,7 @@ export function AutomatedRefresh() {
           <p className="mt-4 text-[13px] text-muted-foreground">The most recent Directful recommendation is compared with the version it replaced. Results reflect this campaign across participating properties.</p>
         </article>
 
-        <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-card/95 p-4 shadow-float backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-card/95 p-4 shadow-float backdrop-blur lg:sticky lg:bottom-4 lg:z-10">
           <p className="text-[13px] text-muted-foreground">Review this recommendation or adjust the copy before the next send.</p><div className="flex gap-2"><Button variant="outline" onClick={() => setScreen("edit")}>Edit content</Button><Button variant="brand" onClick={() => patch(campaign.id, { reviewed: true })}>{reviewed ? <><Check size={15} />Reviewed</> : "Review content"}</Button></div>
         </div>
       </section>}
