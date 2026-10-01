@@ -128,7 +128,7 @@ const CAMPAIGNS: Campaign[] = [
 type SavedState = Record<string, { reviewed?: boolean; current?: Record<Audience, Content> }>;
 const KEY = "directful-auto-refresh-v2";
 
-function useStore() {
+export function useStore() {
   const [state, setState] = useState<SavedState>({});
   useEffect(() => {
     try {
@@ -219,7 +219,7 @@ export function AutomatedRefresh() {
     setScreen("library");
   };
 
-  if (screen === "library") return <><div className="border-b border-border bg-card px-6 py-2 text-center text-[13px]">Directful refreshed your automated invite content. <Button variant="link" className="h-auto px-1 py-0" onClick={() => setScreen("review")}>See the recommendation</Button></div><V2Workspace /></>;
+  if (screen === "library") return <><div className="border-b border-border bg-card px-6 py-2 text-center text-[13px]">Directful refreshed your automated invite content. <Button variant="link" className="h-auto px-1 py-0" onClick={() => setScreen("review")}>See the recommendation</Button></div><V2Workspace onReview={(id) => { setCampaignId(id); setScreen("review"); }} /></>;
 
   return <MarketingShell title="Automated Invites · Content refresh">
     <main className="mx-auto max-w-6xl px-4 pb-20 pt-7 sm:px-6">
