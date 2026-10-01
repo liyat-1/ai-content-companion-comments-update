@@ -19,13 +19,14 @@
  */
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
+  --radius-4xl: 8px;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -59,18 +60,35 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-canvas: var(--canvas);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-event-local: var(--event-local);
+  --color-event-local-foreground: var(--event-local-foreground);
+  --color-event-holiday: var(--event-holiday);
+  --color-event-holiday-foreground: var(--event-holiday-foreground);
+  --color-event-seasonal: var(--event-seasonal);
+  --color-event-seasonal-foreground: var(--event-seasonal-foreground);
+  --font-sans: "Roboto", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: 0 1px 2px oklch(0.2 0.02 264 / 0.05), 0 1px 3px oklch(0.2 0.02 264 / 0.06);
+  --shadow-lift: 0 12px 28px -14px oklch(0.2 0.02 264 / 0.22), 0 2px 6px -2px oklch(0.2 0.02 264 / 0.1);
+  --shadow-float: 0 28px 70px -24px oklch(0.2 0.02 264 / 0.35);
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 3px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.6 0.22 255);
+  --primary-foreground: oklch(0.985 0.003 247.858);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
@@ -95,6 +113,18 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  --canvas: oklch(0.977 0.003 264);
+  --brand: oklch(0.6 0.22 255);
+  --brand-foreground: oklch(0.985 0.003 247.858);
+  --brand-soft: oklch(0.96 0.035 255);
+  --warning: oklch(0.55 0.16 65);
+  --warning-soft: oklch(0.96 0.045 78);
+  --event-local: oklch(0.94 0.038 255);
+  --event-local-foreground: oklch(0.47 0.2 258);
+  --event-holiday: var(--warning-soft);
+  --event-holiday-foreground: var(--warning);
+  --event-seasonal: oklch(0.94 0.068 150);
+  --event-seasonal-foreground: oklch(0.46 0.125 152);
 }
 
 .dark {
@@ -104,8 +134,8 @@
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.68 0.16 250);
+  --primary-foreground: oklch(0.16 0.02 264);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
   --muted: oklch(0.279 0.041 260.031);
@@ -130,6 +160,18 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --canvas: oklch(0.16 0.02 264);
+  --brand: oklch(0.68 0.16 250);
+  --brand-foreground: oklch(0.16 0.02 264);
+  --brand-soft: oklch(0.28 0.05 255);
+  --warning: oklch(0.78 0.14 75);
+  --warning-soft: oklch(0.28 0.055 65);
+  --event-local: oklch(0.3 0.06 255);
+  --event-local-foreground: oklch(0.84 0.09 250);
+  --event-holiday: var(--warning-soft);
+  --event-holiday-foreground: var(--warning);
+  --event-seasonal: oklch(0.3 0.055 152);
+  --event-seasonal-foreground: oklch(0.84 0.09 152);
 }
 
 @layer base {
@@ -137,8 +179,77 @@
     border-color: var(--color-border);
   }
 
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    background-color: var(--color-background);
+    background-color: var(--color-canvas);
     color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Directful AI energy — sharp edges, brand blue, soft light.          */
+/* ------------------------------------------------------------------ */
+@keyframes ai-twinkle { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; } 50% { transform: scale(0.72) rotate(45deg); opacity: 0.65; } }
+@keyframes ai-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes ai-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ai-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 35%, transparent), 0 8px 24px -10px color-mix(in oklch, var(--brand) 55%, transparent); } 50% { box-shadow: 0 0 0 4px color-mix(in oklch, var(--brand) 12%, transparent), 0 10px 30px -8px color-mix(in oklch, var(--brand) 70%, transparent); } }
+@keyframes ai-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+@keyframes ai-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+@utility ai-twinkle { animation: ai-twinkle 2.4s ease-in-out infinite; }
+@utility ai-rise { animation: ai-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@utility ai-float { animation: ai-float 5s ease-in-out infinite; }
+@utility ai-pulse { animation: ai-pulse 2.6s ease-in-out infinite; }
+@utility ai-text {
+  background-image: linear-gradient(100deg, var(--brand) 0%, color-mix(in oklch, var(--brand) 55%, oklch(0.72 0.14 215)) 45%, var(--brand) 90%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ai-shimmer 6s linear infinite;
+}
+@utility ai-surface {
+  background:
+    radial-gradient(60% 50% at 15% 0%, color-mix(in oklch, var(--brand) 16%, transparent), transparent 70%),
+    radial-gradient(50% 45% at 100% 20%, color-mix(in oklch, oklch(0.72 0.14 215) 14%, transparent), transparent 70%),
+    var(--canvas);
+}
+@utility ai-grid {
+  background-image:
+    linear-gradient(color-mix(in oklch, var(--brand) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklch, var(--brand) 7%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+@utility ai-edge {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(120deg, color-mix(in oklch, var(--brand) 70%, transparent), color-mix(in oklch, oklch(0.72 0.14 215) 55%, transparent), color-mix(in oklch, var(--brand) 20%, transparent)) border-box;
+}
+@utility ai-button {
+  background-image: linear-gradient(110deg, var(--brand), color-mix(in oklch, var(--brand) 70%, oklch(0.62 0.15 220)));
+  color: var(--brand-foreground);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes starter-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.starter-rise { animation: starter-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .starter-rise { animation: none; }
+}
+
+@keyframes starter-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+@keyframes starter-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,-30px) scale(1.15); } }
+@utility starter-float { animation: starter-float 5s ease-in-out infinite; }
+@utility starter-orb { animation: starter-drift 14s ease-in-out infinite; filter: blur(60px); }
+@media (prefers-reduced-motion: reduce) { .starter-float, .starter-orb { animation: none; } }

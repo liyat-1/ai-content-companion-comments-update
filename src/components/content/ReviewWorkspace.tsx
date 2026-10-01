@@ -1,0 +1,73 @@
+import { useMemo, useState } from "react";
+import { BarChart3, Check, Eye, GitCompareArrows, Lightbulb, Maximize2, WandSparkles, X } from "lucide-react";
+import { AiEditPanel } from "@/components/ai/AiEditPanel";
+import { SmsPreview } from "@/components/editor/SmsPreview";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { EmailMock, IMAGES, OriginMarker, StatusBadge, fill } from "./shared";
+import { IMAGE_LABEL, SEGMENT_LABEL, saveCampaign, useLibrary, type Channel, type LibraryCampaign, type Segment } from "@/lib/contentLibrary";
+import type { Copy } from "@/lib/aiWriter";
+
+const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+const inputClass = "w-full rounded-sm border border-border bg-background px-3 py-2 text-[13px] text-card-foreground outline-none transition-colors focus:border-brand";
+type ReviewMode = "preview" | "ai" | "ai-minimized" | "compare" | "insight";
+
+export function ReviewWorkspace({ id, openAi = false, onClose }: { id: string; openAi?: boolean; onClose: () => void }) {
+  const { campaigns } = useLibrary();
+  const source = campaigns.find((campaign) => campaign.id === id);
+  const [draft, setDraft] = useState<LibraryCampaign | null>(() => source ? clone(source) : null);
+  const [baseline, setBaseline] = useState(() => source ? clone(source) : null);
+  const [segment, setSegment] = useState<Segment>("direct");
+  const [channel, setChannel] = useState<Channel>(source?.channels[0] ?? "text");
+  const [mode, setMode] = useState<ReviewMode>(openAi ? "ai" : "preview");
+  const [aiTouched, setAiTouched] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [flash, setFlash] = useState(false);
+
+  if (!source || !draft || !baseline) return null;
+  const content = draft.content[segment];
+  const original = baseline.content[segment];
+  const dirty = JSON.stringify(draft.content) !== JSON.stringify(baseline.content) || draft.image !== baseline.image;
+  const saved = campaigns.find((campaign) => campaign.id === id) ?? source;
+  const edit = (fn: (current: LibraryCampaign["content"][Segment]) => void) => setDraft((current) => { if (!current) return current; const next = clone(current); fn(next.content[segment]); return next; });
+  const save = () => { saveCampaign(draft, aiTouched ? "AI refinement + manual edit" : "Manual edit"); setBaseline(clone(draft)); setAiTouched(false); setFlash(true); window.setTimeout(() => setFlash(false), 1600); };
+  const copy: Copy = channel === "email" ? { kind: "email", email: { subject: content.email.subject, preheader: content.email.preheader, heading: content.email.heading, body: content.email.body, ctaLabel: content.email.cta } } : { kind: "text", text: { message: content.text } };
+  const applyAi = (next: Copy) => { edit((current) => { if (next.kind === "email") current.email = { subject: next.email.subject, preheader: next.email.preheader, heading: next.email.heading, body: next.email.body, cta: next.email.ctaLabel }; else current.text = next.text.message; }); setAiTouched(true); setMode("compare"); };
+   const tabs: { id: ReviewMode; label: string; icon: typeof Eye }[] = [{ id: "preview", label: "Preview", icon: Eye }, { id: "ai", label: "Edit with AI", icon: WandSparkles }, { id: "compare", label: "Compare to live", icon: GitCompareArrows }, { id: "insight", label: "Content Insights", icon: Lightbulb }];
+
+  return <div className="fixed inset-0 z-[60] grid place-items-center bg-foreground/70 p-2 backdrop-blur-sm sm:p-4" onMouseDown={(event) => event.target === event.currentTarget && (dirty ? setConfirm(true) : onClose())}>
+    <section role="dialog" aria-modal="true" aria-label={`${draft.name} content review`} className="flex h-[94vh] w-full max-w-[1320px] flex-col overflow-hidden rounded-lg border border-border bg-canvas shadow-float">
+      <header className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3 sm:px-5"><div className="min-w-0 flex-1"><p className="text-[10.5px] font-medium text-muted-foreground">{draft.kind} · Review draft</p><h2 className="flex items-center gap-2 truncate text-[17px] font-semibold text-card-foreground">{draft.name}<StatusBadge status={saved.status} /></h2></div><span className={`text-[11.5px] ${flash ? "font-semibold text-brand" : dirty ? "text-warning" : "text-muted-foreground"}`}>{flash ? "Saved" : dirty ? "Unsaved changes" : "All changes saved"}</span><Button variant="brand" size="sm" disabled={!dirty} onClick={save}><Check />Save changes</Button><Button variant="ghost" size="icon" onClick={() => dirty ? setConfirm(true) : onClose()} aria-label="Close review"><X /></Button></header>
+
+       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card/80 px-4 py-2.5 sm:px-5"><p className="mr-1 text-[11px] font-semibold uppercase text-muted-foreground">Content for</p><div className="flex gap-1 rounded-md bg-muted p-1">{(["direct", "ota"] as Segment[]).map((value) => <Button key={value} variant={segment === value ? "brand" : "ghost"} size="sm" onClick={() => { setSegment(value); setMode("preview"); }}>{SEGMENT_LABEL[value]}</Button>)}</div><div className="flex gap-1 rounded-md bg-muted p-1">{draft.channels.map((value) => <Button key={value} variant={channel === value ? "secondary" : "ghost"} size="sm" onClick={() => { setChannel(value); setMode("preview"); }}>{value === "email" ? "Email" : "Text"}</Button>)}</div><div className="ml-auto flex max-w-full gap-1 overflow-x-auto">{tabs.map(({ id: value, label, icon: Icon }) => <Button key={value} variant={mode === value ? "brand" : "ghost"} size="sm" onClick={() => setMode(mode === value && value !== "preview" ? "preview" : value)}><Icon />{label}</Button>)}</div></div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5"><div className="grid min-h-full gap-5 lg:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.25fr)]">
+        <section className="min-w-0"><div className="mb-3 flex items-center justify-between"><p className="text-[11px] font-semibold uppercase text-muted-foreground">{SEGMENT_LABEL[segment]} · {channel === "email" ? "Email content" : "Text content"}</p><OriginMarker origin={saved.origin} /></div>{channel === "email" ? <div className="space-y-3 rounded-lg border border-border bg-card p-4 shadow-card">{([ ["subject", "Subject line"], ["preheader", "Preview text"], ["heading", "Heading"] ] as const).map(([key, label]) => <label key={key} className="block"><span className="mb-1 block text-[11.5px] font-medium text-muted-foreground">{label}</span><input className={inputClass} value={content.email[key]} onChange={(e) => edit((current) => { current.email[key] = e.target.value; })} /></label>)}<label className="block"><span className="mb-1 block text-[11.5px] font-medium text-muted-foreground">Email content</span><textarea rows={7} className={inputClass} value={content.email.body} onChange={(e) => edit((current) => { current.email.body = e.target.value; })} /></label><div className="grid gap-3 sm:grid-cols-2"><label><span className="mb-1 block text-[11.5px] font-medium text-muted-foreground">Button</span><input className={inputClass} value={content.email.cta} onChange={(e) => edit((current) => { current.email.cta = e.target.value; })} /></label><label><span className="mb-1 block text-[11.5px] font-medium text-muted-foreground">Image</span><select className={inputClass} value={draft.image} onChange={(e) => setDraft((current) => current ? { ...current, image: e.target.value } : current)}>{Object.keys(IMAGES).map((key) => <option key={key} value={key}>{IMAGE_LABEL[key]}</option>)}</select></label></div></div> : <div className="rounded-lg border border-border bg-card p-4 shadow-card"><textarea rows={9} className={inputClass} value={content.text} onChange={(e) => edit((current) => { current.text = e.target.value; })} /><p className="mt-2 text-right text-[11px] text-muted-foreground">{content.text.length} characters · {Math.ceil(content.text.length / 160)} segment{content.text.length > 160 ? "s" : ""}</p></div>}</section>
+
+         <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-card"><div className="flex items-center justify-between border-b border-border px-4 py-3"><div><p className="text-[10.5px] font-semibold uppercase text-brand">{mode === "ai-minimized" ? "AI minimized" : tabs.find((tab) => tab.id === mode)?.label}</p><p className="text-[12px] text-muted-foreground">{SEGMENT_LABEL[segment]} · {channel === "email" ? "Email" : "Text"}</p></div></div><div className={mode === "ai" ? "min-h-[520px]" : "min-h-[520px] p-4 sm:p-5"}>
+          {mode === "preview" && (channel === "email" ? <EmailMock email={content.email} image={draft.image} /> : <div className="flex justify-center overflow-hidden"><SmsPreview message={fill(content.text)} sender="Holiday Inn" scale={0.62} /></div>)}
+            {mode === "ai" && <AiEditPanel key={`${segment}-${channel}`} embedded title={`${draft.name} · ${SEGMENT_LABEL[segment]} · ${channel === "email" ? "Email" : "Text"}`} copy={copy} onApply={applyAi} onClose={() => setMode("preview")} onMinimize={() => setMode("ai-minimized")} onEditMyself={() => setMode("preview")} />}
+           {mode === "ai-minimized" && <div className="flex min-h-[480px] items-stretch justify-end"><Button variant="ghost" onClick={() => setMode("ai")} className="group flex h-auto w-16 flex-col justify-between border border-border bg-canvas px-2 py-5 hover:border-brand/30 hover:bg-card" aria-label="Expand Directful AI"><span className="grid size-9 place-items-center rounded-md bg-brand text-brand-foreground"><WandSparkles size={15} /></span><span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-semibold">Directful AI · {SEGMENT_LABEL[segment]}</span><Maximize2 size={15} className="text-brand" /></Button></div>}
+          {mode === "compare" && <CompareView channel={channel} before={original} after={content} />}
+          {mode === "insight" && <InsightView campaign={draft} segment={segment} channel={channel} />}
+        </div></section>
+      </div></div>
+       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 sm:px-5"><p className="text-[11.5px] text-muted-foreground">Review is optional. Save any changes, then go back and publish when you are ready.</p><Button variant="brand" onClick={onClose}>Back to release</Button></footer>
+    </section>
+
+    <AlertDialog open={confirm} onOpenChange={setConfirm}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Unsaved changes</AlertDialogTitle><AlertDialogDescription>You have unsaved changes to {draft.name}. Leave without saving?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel><AlertDialogAction onClick={onClose}>Leave</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+  </div>;
+}
+
+function CompareView({ channel, before, after }: { channel: Channel; before: LibraryCampaign["content"][Segment]; after: LibraryCampaign["content"][Segment] }) {
+  const rows = useMemo(() => channel === "text" ? [{ label: "Message", before: before.text, after: after.text }] : [{ label: "Subject", before: before.email.subject, after: after.email.subject }, { label: "Heading", before: before.email.heading, after: after.email.heading }, { label: "Body", before: before.email.body, after: after.email.body }, { label: "Button", before: before.email.cta, after: after.email.cta }], [after, before, channel]);
+  const changed = rows.filter((row) => row.before !== row.after).length;
+  return <div><div className="mb-4 flex items-center gap-2 rounded-md bg-brand-soft px-3 py-2 text-[12px] text-brand"><GitCompareArrows size={14} />{changed ? `${changed} field${changed === 1 ? "" : "s"} changed in this selection` : "No changes yet — open Edit with AI or edit the fields manually."}</div><div className="space-y-4">{rows.map((row) => <div key={row.label}><p className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">{row.label}</p><div className="grid gap-2 sm:grid-cols-2"><div className="rounded-md border border-border bg-muted/35 p-3"><p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">Live (v1)</p><p className="text-[12px] leading-relaxed text-card-foreground">{fill(row.before)}</p></div><div className="rounded-md border border-brand/30 bg-brand-soft/35 p-3"><p className="mb-1 text-[10px] font-semibold uppercase text-brand">This draft</p><p className="text-[12px] leading-relaxed text-card-foreground">{fill(row.after)}</p></div></div></div>)}</div></div>;
+}
+
+function InsightView({ campaign, segment, channel }: { campaign: LibraryCampaign; segment: Segment; channel: Channel }) {
+  const why = campaign.why;
+  return <div className="space-y-5"><div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-md bg-brand-soft text-brand"><BarChart3 size={19} /></span><div><h3 className="text-[16px] font-semibold text-card-foreground">Why this content should perform better</h3><p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">Built for {SEGMENT_LABEL[segment].toLowerCase()} at this point in their stay journey.</p></div></div><dl className="grid gap-3 sm:grid-cols-2"><Insight label="Change" text={channel === "email" ? why?.subject ?? "The subject and opening now lead with the guest’s reason to return." : why?.text ?? "The message keeps one clear invitation and one action."} /><Insight label="Reasoning" text={channel === "email" ? why?.template ?? "The familiar layout keeps the offer easy to scan." : "A concise message reduces friction on mobile."} /><Insight label="Learned pattern" text="Return campaigns with one seasonal cue and one direct-booking benefit earned 18% more clicks last year." /><Insight label="Context used" text={why?.context.join(" · ") ?? "Guest segment · journey timing · existing brand voice"} /></dl></div>;
+}
+
+function Insight({ label, text }: { label: string; text: string }) { return <div className="rounded-md border border-border p-4"><dt className="text-[10.5px] font-semibold uppercase text-brand">{label}</dt><dd className="mt-2 text-[12.5px] leading-relaxed text-card-foreground">{text}</dd></div>; }
