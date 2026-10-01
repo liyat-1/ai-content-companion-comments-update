@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Circle, Gift, Hotel, Leaf, Minus, PartyPopper, Pencil, RefreshCw, Sparkle, UserRound, X } from "lucide-react";
+import { ArrowRight, Check, Circle, Minus, PartyPopper, Pencil, Sparkle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sparkle as SparkIcon } from "@/components/ai/Sparkle";
 import { AiMark, EmailMock, fill } from "@/components/content/shared";
@@ -64,21 +64,61 @@ function rangeLabel(startMonth: number, count: number) {
 const listJoin = (items: string[]) => items.join(" + ");
 
 const DirectionArt = ({ id }: { id: string }) => {
-  const art = {
-    standard: { Icon: Hotel, shell: "bg-brand-soft", ink: "text-brand" },
-    seasonal: { Icon: Leaf, shell: "bg-event-seasonal", ink: "text-event-seasonal-foreground" },
-    guest: { Icon: UserRound, shell: "bg-highlight", ink: "text-highlight-foreground" },
-    promotional: { Icon: Gift, shell: "bg-warning-soft", ink: "text-warning" },
-    fresh: { Icon: RefreshCw, shell: "bg-secondary", ink: "text-secondary-foreground" },
-  }[id] ?? { Icon: Sparkle, shell: "bg-brand-soft", ink: "text-brand" };
-  const Icon = art.Icon;
+  const scene = {
+    standard: (
+      <>
+        <circle cx="106" cy="69" r="23" className="fill-poster-pink" />
+        <circle cx="106" cy="64" r="11" className="fill-poster-copy" />
+        <path d="M76 141c4-37 17-57 30-57s27 20 31 57" className="fill-poster-purple" />
+        <path d="M13 148h194M28 101h46v47H28zM35 110h31M35 120h23" className="stroke-poster-copy" strokeWidth="3" fill="none" />
+        <path d="M138 80h52v68h-52zM150 95h27M150 106h20" className="stroke-poster-copy" strokeWidth="3" fill="none" />
+      </>
+    ),
+    seasonal: (
+      <>
+        <circle cx="107" cy="64" r="12" className="fill-poster-copy" />
+        <path d="M76 145c2-39 14-63 31-63 18 0 31 24 33 63" className="fill-poster-pink" />
+        <path d="M83 97c15 8 31 8 48 0M107 84v61" className="stroke-poster-copy" strokeWidth="3" fill="none" />
+        <path d="M34 43c20 4 31 16 34 36-20-4-31-16-34-36ZM151 30c-17 9-25 23-23 42 17-9 25-23 23-42ZM162 81c15 2 25 10 30 24-15-1-25-9-30-24Z" className="fill-poster-purple" />
+        <path d="M19 146c17-19 31-19 47 0M148 146c16-24 33-24 51 0" className="stroke-poster-copy" strokeWidth="3" fill="none" />
+      </>
+    ),
+    guest: (
+      <>
+        <circle cx="84" cy="66" r="12" className="fill-poster-copy" />
+        <circle cx="137" cy="61" r="12" className="fill-poster-copy" />
+        <path d="M55 145c2-41 14-65 29-65s28 24 30 65M107 145c3-44 14-70 30-70s28 26 30 70" className="fill-poster-purple" />
+        <path d="M94 101c17 11 31 11 45-2" className="stroke-poster-pink" strokeWidth="7" strokeLinecap="round" fill="none" />
+        <path d="M31 120c-10-20-5-36 14-48M177 91c18-12 28-5 30 18" className="stroke-poster-copy" strokeWidth="3" strokeLinecap="round" fill="none" />
+        <circle cx="42" cy="63" r="7" className="fill-poster-pink" />
+      </>
+    ),
+    promotional: (
+      <>
+        <circle cx="105" cy="65" r="12" className="fill-poster-copy" />
+        <path d="M72 145c3-43 15-66 33-66 17 0 30 23 33 66" className="fill-poster-pink" />
+        <path d="M102 99c-20 6-34 18-43 37M109 99c20 4 36 15 47 33" className="stroke-poster-copy" strokeWidth="5" strokeLinecap="round" fill="none" />
+        <path d="M23 44h53v38H23z" className="fill-poster-purple" />
+        <path d="m35 54 14 9 15-9M167 37l7 15 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2Z" className="stroke-poster-copy" strokeWidth="3" fill="none" />
+      </>
+    ),
+    fresh: (
+      <>
+        <circle cx="110" cy="68" r="12" className="fill-poster-copy" />
+        <path d="M78 145c4-43 15-64 32-64 18 0 30 21 34 64" className="fill-poster-purple" />
+        <path d="M86 101 51 79M136 101l34-27" className="stroke-poster-copy" strokeWidth="5" strokeLinecap="round" fill="none" />
+        <path d="M28 68c-9-19-4-33 14-43M27 40h21M175 65c13-14 12-29-2-45M164 30h21" className="stroke-poster-pink" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <path d="M25 128c20-16 38-13 53 9M143 137c14-22 34-25 57-9" className="stroke-poster-copy" strokeWidth="3" fill="none" />
+      </>
+    ),
+  }[id];
   return (
-    <span className={`relative grid h-24 w-full place-items-center overflow-hidden ${art.shell}`} aria-hidden="true">
-      <span className={`absolute left-6 top-5 size-3 rounded-full border ${art.ink} opacity-30`} />
-      <span className={`absolute bottom-4 right-7 h-4 w-8 rounded-full border ${art.ink} opacity-20`} />
-      <span className={`grid size-14 place-items-center rounded-full border bg-card/70 ${art.ink} transition-transform duration-200 group-hover:-translate-y-0.5`}>
-        <Icon size={28} strokeWidth={1.7} />
-      </span>
+    <span className={`absolute inset-0 overflow-hidden ${id === "seasonal" ? "bg-poster-purple" : id === "guest" ? "bg-poster-pink" : "bg-poster-blue"}`} aria-hidden="true">
+      <span className="absolute -right-8 -top-8 size-32 rounded-full border-[22px] border-poster-copy/10" />
+      <span className="absolute left-5 top-7 size-4 rounded-full bg-poster-copy/25" />
+      <svg viewBox="0 0 220 170" className="absolute inset-x-0 top-1 h-[58%] w-full transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-[1.03]">
+        {scene}
+      </svg>
     </span>
   );
 };
@@ -268,16 +308,18 @@ export function RefreshFlow({ setup, periodOptions, baseCopy, aiCopy, learning, 
                   {step === "direction" ? (
                     <div className="space-y-4">
                       <p className="rounded-md border border-brand/25 bg-brand-soft/40 px-3.5 py-2.5 text-[12px] text-card-foreground"><Sparkle size={12} className="mr-1.5 inline text-brand" /><b>Recommended for your period: Seasonal alignment.</b> {monthName(first.month)} is approaching, so a light seasonal refresh can make your content feel timely without changing your overall messaging. AI recommends — you decide.</p>
-                      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {DIRS.map((d) => {
                           const on = dirs.includes(d.id);
                           return (
-                            <Button key={d.id} variant="outline" onClick={() => toggleDir(d.id)} className={`${cardCls(on)} overflow-hidden`}>
+                            <Button key={d.id} variant="outline" onClick={() => toggleDir(d.id)} className={`group relative block h-[310px] w-full overflow-hidden whitespace-normal rounded-lg border p-0 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lift ${on ? "border-brand ring-2 ring-brand" : "border-border hover:border-brand/50"}`}>
                               <DirectionArt id={d.id} />
-                              <span className="block p-3.5">
-                                <span className="flex flex-wrap items-center gap-2"><span className="text-[13.5px] font-semibold text-card-foreground">{d.title}</span>{d.id === "seasonal" && <Rec />}</span>
-                                <span className="mt-1 block text-[12px] font-medium text-card-foreground">{d.lead}</span>
-                                <span className="mt-1 block text-[11.5px] leading-relaxed text-muted-foreground">{d.note}</span>
+                              <span className="absolute inset-0 bg-gradient-to-t from-poster-ink via-poster-ink/75 to-transparent" />
+                              {d.id === "seasonal" && <span className="absolute left-3 top-3"><Rec /></span>}
+                              <span className="absolute inset-x-0 bottom-0 block p-4 text-poster-copy">
+                                <span className="block text-[15px] font-semibold leading-tight">{d.title}</span>
+                                <span className="mt-1.5 block text-[11.5px] font-semibold leading-snug text-poster-copy/95">{d.lead}</span>
+                                <span className="mt-2 block border-t border-poster-copy/20 pt-2 text-[10.5px] leading-relaxed text-poster-copy/75">{d.note}</span>
                               </span>
                               <Tick on={on} />
                             </Button>
