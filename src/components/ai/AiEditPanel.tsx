@@ -2,7 +2,6 @@ import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import {
   Check,
-  ChevronDown,
   FileText,
   GitCompare,
   Image,
@@ -10,7 +9,6 @@ import {
   Paperclip,
   Plus,
   RefreshCw,
-  SlidersHorizontal,
   Pencil,
   Video,
   X,
@@ -39,13 +37,9 @@ import { Sparkle } from "./Sparkle";
 import {
   EDIT_QUICK_ACTIONS,
   FEEDBACK_REASONS,
-  FOCUSES,
-  LENGTHS,
-  TONES,
   diffWords,
   refine,
   type Copy,
-  type Personalize,
 } from "@/lib/aiWriter";
 
 type Msg =
@@ -118,12 +112,6 @@ export function AiEditPanel({
   const [seed, setSeed] = useState(0);
   const [lastRequest, setLastRequest] = useState("");
   const [memory, setMemory] = useState<string[]>([]);
-  const [showPersonalize, setShowPersonalize] = useState(false);
-  const [personal, setPersonal] = useState<Personalize>({
-    tone: "Warm",
-    length: "Medium",
-    focus: "Return stay",
-  });
   const [compareIdx, setCompareIdx] = useState<number | null>(null);
   const [feedbackFor, setFeedbackFor] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -148,7 +136,7 @@ export function AiEditPanel({
   const isEmptyState = !initialContext && msgs.length === 1;
   const ask = async (
     request: string,
-    opts?: { personalize?: Personalize; retry?: boolean },
+    opts?: { retry?: boolean },
     files: AttachmentInput[] = [],
   ) => {
     const q = request.trim();
@@ -271,7 +259,7 @@ export function AiEditPanel({
     <div
       className={
         embedded
-          ? "h-full min-h-[520px]"
+          ? "h-full min-h-[500px]"
           : `fixed inset-0 grid place-items-center bg-foreground/25 p-3 backdrop-blur-[3px] sm:p-6 ${className}`
       }
       onMouseDown={(event) => !embedded && event.target === event.currentTarget && onClose()}
@@ -280,9 +268,9 @@ export function AiEditPanel({
         role={embedded ? "region" : "dialog"}
         aria-modal={embedded ? undefined : "true"}
         aria-label="Directful AI"
-        className={`ai-rise relative flex w-full flex-col overflow-hidden border border-border bg-card ${embedded ? "h-full min-h-[560px] rounded-lg shadow-lift" : "max-h-[min(86vh,50rem)] max-w-[48rem] rounded-xl shadow-float"}`}
+        className={`ai-rise relative flex w-full flex-col overflow-hidden border border-brand/30 bg-card ${embedded ? "h-full min-h-[520px] rounded-lg shadow-lift" : "max-h-[min(86vh,50rem)] max-w-[48rem] rounded-xl shadow-float"}`}
       >
-        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/70 px-4 py-3.5 sm:px-5">
+        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-brand/20 bg-brand-soft/70 px-4 py-3.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <AiMark size={32} />
             <div className="min-w-0">
@@ -481,7 +469,7 @@ export function AiEditPanel({
           <div ref={endRef} />
         </div>
 
-        <div className="border-t border-border/70 bg-card px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
+        <div className="border-t border-brand/20 bg-brand-soft/30 px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
           {suggestedActions?.length ? (
             <div className="mb-3 flex flex-wrap gap-1.5">
               {suggestedActions.slice(0, 3).map((action) => (
@@ -497,78 +485,6 @@ export function AiEditPanel({
               ))}
             </div>
           ) : null}
-          <div className="mb-3 grid grid-cols-2 gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowPersonalize((v) => !v)}
-              className="shrink-0 px-2 text-[12px]"
-            >
-              <SlidersHorizontal size={13} />
-              Personalize
-              <ChevronDown
-                size={13}
-                className={`transition-transform ${showPersonalize ? "rotate-180" : ""}`}
-              />
-            </Button>
-            {EDIT_QUICK_ACTIONS.filter(
-              (a) => copy.kind === "email" || !/subject|text version/i.test(a),
-            )
-              .slice(0, 3)
-              .map((a) => (
-                <Button
-                  key={a}
-                  variant="outline"
-                  size="sm"
-                  className="min-w-0 justify-start truncate px-2.5 text-[11.5px] font-medium"
-                  onClick={() => ask(a)}
-                >
-                  {a}
-                </Button>
-              ))}
-          </div>
-          {showPersonalize && (
-            <div className="mb-3 space-y-2 rounded-lg border border-border bg-canvas/45 p-3">
-              {(
-                [
-                  ["Tone", "tone", TONES],
-                  ["Length", "length", LENGTHS],
-                  ["Focus", "focus", FOCUSES],
-                ] as const
-              ).map(([label, key, opts]) => (
-                <div key={key}>
-                  <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {label}
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {opts.map((o) => (
-                      <button
-                        key={o}
-                        className={chip(personal[key] === o)}
-                        onClick={() => setPersonal((p) => ({ ...p, [key]: o }))}
-                      >
-                        {o}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              <Button
-                size="sm"
-                variant="brand"
-                className="w-full"
-                onClick={() =>
-                  ask(
-                    `Personalize: ${personal.tone} tone, ${personal.length.toLowerCase()} length, focus on ${personal.focus.toLowerCase()}`,
-                    { personalize: personal },
-                  )
-                }
-              >
-                <Sparkle size={12} />
-                Apply personalization
-              </Button>
-            </div>
-          )}
           <TooltipProvider>
             <PromptInput
               accept={ACCEPT_ALL}
