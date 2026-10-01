@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Circle, Minus, PartyPopper, Pencil, Sparkle, X } from "lucide-react";
+import { ArrowRight, Check, Circle, Gift, Hotel, Leaf, Minus, PartyPopper, Pencil, RefreshCw, Sparkle, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sparkle as SparkIcon } from "@/components/ai/Sparkle";
 import { AiMark, EmailMock, fill } from "@/components/content/shared";
@@ -8,14 +8,6 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { SmsPreview } from "@/components/editor/SmsPreview";
 import { HOTEL, monthName, seasonalFor, type MonthPerformance, type PeriodCopy, type SeasonalSuggestion, type UpdatePreferences } from "@/lib/contentV2";
-import lobbyImg from "@/assets/lobby-arrival.jpg";
-import foliageImg from "@/assets/events/fall-foliage.jpg";
-import treeImg from "@/assets/events/rockefeller-tree.jpg";
-import poolImg from "@/assets/pool-dusk.jpg";
-import suiteImg from "@/assets/suite-detail.jpg";
-import terraceImg from "@/assets/breakfast-terrace.jpg";
-import rooftopImg from "@/assets/rooftop-bar.jpg";
-import courtyardImg from "@/assets/courtyard.jpg";
 
 export type FlowSetup = { recommendedId: string; context?: string; preferences?: UpdatePreferences };
 
@@ -40,14 +32,12 @@ const HORIZONS = [
   { months: 12, title: "12 Months", lead: "Refresh content for the full year", note: "Best when you want a complete annual content refresh." },
 ];
 
-const seasonImage = (m: number) => (m >= 8 && m <= 10 ? foliageImg : m === 11 || m <= 1 ? treeImg : m >= 5 && m <= 7 ? poolImg : terraceImg);
-
 const directionsFor = (month: number) => [
-  { id: "standard", engine: "general", title: "Keep it standard", lead: "Stay consistent with your current content", note: "Refresh your existing messaging while keeping the same approach, structure and hotel voice.", img: lobbyImg },
-  { id: "seasonal", engine: "seasonal", title: "Seasonal alignment", lead: "Adapt your content to the time of year", note: "Add relevant seasonal context while keeping it natural and appropriate for your guests.", img: seasonImage(month) },
-  { id: "guest", engine: "guest", title: "Focus on the guest experience", lead: "More welcoming and experience-led", note: "Highlight the stay, comfort and relaxation guests can enjoy when they return.", img: suiteImg },
-  { id: "promotional", engine: "promotional", title: "More promotional", lead: "Give guests a stronger reason to book", note: "Make offers, benefits and booking opportunities more noticeable — still natural.", img: rooftopImg },
-  { id: "fresh", engine: "general", title: "Freshen it up", lead: "Give existing content a noticeable refresh", note: "Keep your core message with new wording, stronger messaging and a more modern feel.", img: courtyardImg },
+  { id: "standard", engine: "general", title: "Keep it standard", lead: "Stay consistent with your current content", note: "Refresh your existing messaging while keeping the same approach, structure and hotel voice." },
+  { id: "seasonal", engine: "seasonal", title: "Seasonal alignment", lead: "Adapt your content to the time of year", note: "Add relevant seasonal context while keeping it natural and appropriate for your guests.", month },
+  { id: "guest", engine: "guest", title: "Focus on the guest experience", lead: "More welcoming and experience-led", note: "Highlight the stay, comfort and relaxation guests can enjoy when they return." },
+  { id: "promotional", engine: "promotional", title: "More promotional", lead: "Give guests a stronger reason to book", note: "Make offers, benefits and booking opportunities more noticeable — still natural." },
+  { id: "fresh", engine: "general", title: "Freshen it up", lead: "Give existing content a noticeable refresh", note: "Keep your core message with new wording, stronger messaging and a more modern feel." },
 ];
 // Combinations that would give conflicting instructions.
 const CONFLICTS: Record<string, string[]> = { standard: ["fresh", "promotional"], fresh: ["standard"], promotional: ["standard"] };
@@ -72,6 +62,26 @@ function rangeLabel(startMonth: number, count: number) {
 }
 
 const listJoin = (items: string[]) => items.join(" + ");
+
+const DirectionArt = ({ id }: { id: string }) => {
+  const art = {
+    standard: { Icon: Hotel, shell: "bg-brand-soft", ink: "text-brand" },
+    seasonal: { Icon: Leaf, shell: "bg-event-seasonal", ink: "text-event-seasonal-foreground" },
+    guest: { Icon: UserRound, shell: "bg-highlight", ink: "text-highlight-foreground" },
+    promotional: { Icon: Gift, shell: "bg-warning-soft", ink: "text-warning" },
+    fresh: { Icon: RefreshCw, shell: "bg-secondary", ink: "text-secondary-foreground" },
+  }[id] ?? { Icon: Sparkle, shell: "bg-brand-soft", ink: "text-brand" };
+  const Icon = art.Icon;
+  return (
+    <span className={`relative grid h-24 w-full place-items-center overflow-hidden ${art.shell}`} aria-hidden="true">
+      <span className={`absolute left-6 top-5 size-3 rounded-full border ${art.ink} opacity-30`} />
+      <span className={`absolute bottom-4 right-7 h-4 w-8 rounded-full border ${art.ink} opacity-20`} />
+      <span className={`grid size-14 place-items-center rounded-full border bg-card/70 ${art.ink} transition-transform duration-200 group-hover:-translate-y-0.5`}>
+        <Icon size={28} strokeWidth={1.7} />
+      </span>
+    </span>
+  );
+};
 
 function acknowledgeNote(n: string) {
   const parts: string[] = [];
@@ -152,7 +162,12 @@ export function RefreshFlow({ setup, periodOptions, baseCopy, aiCopy, learning, 
 
   /* ------------ conversation pieces ------------ */
   const Ai = ({ children }: { children: React.ReactNode }) => (
-    <Message from="assistant"><MessageContent className="bg-transparent p-0 text-[13.5px] leading-relaxed text-card-foreground">{children}</MessageContent></Message>
+    <Message from="assistant">
+      <div className="flex items-start gap-2.5">
+        <span className="mt-0.5 shrink-0"><AiMark size={24} /></span>
+        <MessageContent className="min-w-0 bg-transparent p-0 text-[13.5px] leading-relaxed text-card-foreground">{children}</MessageContent>
+      </div>
+    </Message>
   );
   const You = ({ text }: { text: string }) => (
     <Message from="user"><MessageContent className="rounded-md bg-primary px-3 py-1.5 text-[12.5px] font-medium text-primary-foreground">{text}</MessageContent></Message>
@@ -258,7 +273,7 @@ export function RefreshFlow({ setup, periodOptions, baseCopy, aiCopy, learning, 
                           const on = dirs.includes(d.id);
                           return (
                             <Button key={d.id} variant="outline" onClick={() => toggleDir(d.id)} className={`${cardCls(on)} overflow-hidden`}>
-                              <img src={d.img} alt="" className="h-24 w-full object-cover" loading="lazy" />
+                              <DirectionArt id={d.id} />
                               <span className="block p-3.5">
                                 <span className="flex flex-wrap items-center gap-2"><span className="text-[13.5px] font-semibold text-card-foreground">{d.title}</span>{d.id === "seasonal" && <Rec />}</span>
                                 <span className="mt-1 block text-[12px] font-medium text-card-foreground">{d.lead}</span>
