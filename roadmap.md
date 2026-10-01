@@ -313,7 +313,7 @@
 
 ## Campaign editor and AI panel upgrade
 
-- [ ] Recompose the campaign editor as a balanced split workspace matching the supplied reference
-- [ ] Replace the live preview with the standard AI panel and add a compact docked minimized state
-- [ ] Add dated previous-version selection, dynamic preview, and selected-channel restoration
-- [ ] Verify direct and performance-led entry across desktop and narrow layouts
+- [x] Recompose the campaign editor as a balanced split workspace matching the supplied reference
+- [x] Replace the live preview with the standard AI panel and add a compact docked minimized state
+- [x] Add dated previous-version selection, dynamic preview, and selected-channel restoration
+- [x] Verify direct and performance-led entry across desktop and narrow layouts
