@@ -47,3 +47,28 @@ Return ONLY JSON: {"reply": string (short, friendly, markdown), "copy": ${fields
       return { reply: "", copy: null, changes: [], why: "", error: (e as Error).message };
     }
   });
+
+export type BothReply = { reply: string; direct: EditCopy | null; ota: EditCopy | null; directChanges: string[]; otaChanges: string[]; why: string; error?: string };
+
+/** Rewrites Direct and OTA guest content together from one prompt, keeping each audience distinct. */
+export const editBothAssist = createServerFn({ method: "POST" })
+  .inputValidator((d: { text: string; history: History; kind: "email" | "text"; direct: EditCopy; ota: EditCopy; campaign: string }) => d)
+  .handler(async ({ data }): Promise<BothReply> => {
+    const { askGateway, parseJson } = await import("./ai.server");
+    const fields = data.kind === "email" ? `{"subject","preheader","heading","body","ctaLabel"}` : `{"message"}`;
+    const system = `You edit guest-messaging copy for Holiday Inn Times Square (New York). Campaign: ${data.campaign}. Channel: ${data.kind}.
+There are two audiences: DIRECT guests (booked directly with the hotel — loyal, reward the relationship) and OTA guests (booked via Expedia/Booking.com — goal is to win their next booking direct, explain why booking direct is better).
+Current DIRECT content (JSON): ${JSON.stringify(data.direct)}
+Current OTA content (JSON): ${JSON.stringify(data.ota)}
+The user gives one instruction that may include shared direction plus audience-specific direction. Apply shared direction to both and audience-specific direction only to that audience. Keep the two versions clearly distinct. Keep merge tags like {first_name} and {booking_link} intact. Text messages stay under ~300 characters with one link. If the user only asks a question, answer and return null copies.
+Return ONLY JSON: {"reply": string (short, friendly markdown explaining what you did for each audience), "direct": ${fields} | null, "ota": ${fields} | null, "directChanges": string[] (up to 3 short bullets), "otaChanges": string[] (up to 3), "why": string (one sentence)}.`;
+    const history = data.history.slice(-6).map((m) => `${m.role}: ${m.text}`).join("\n");
+    try {
+      const text = await askGateway(system, [{ type: "text", text: `${history ? `Conversation so far:\n${history}\n\n` : ""}User: ${data.text}` }]);
+      const json = parseJson<BothReply>(text);
+      if (!json) return { reply: text, direct: null, ota: null, directChanges: [], otaChanges: [], why: "" };
+      return { reply: json.reply ?? "", direct: json.direct ?? null, ota: json.ota ?? null, directChanges: json.directChanges ?? [], otaChanges: json.otaChanges ?? [], why: json.why ?? "" };
+    } catch (e) {
+      return { reply: "", direct: null, ota: null, directChanges: [], otaChanges: [], why: "", error: (e as Error).message };
+    }
+  });
