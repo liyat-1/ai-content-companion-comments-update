@@ -16,6 +16,7 @@ import { PromotionSelector } from "./PromotionSelector";
 import { SmsPreview } from "@/components/editor/SmsPreview";
 import { checkContent } from "./contentChecks";
 import { AiEditPanel } from "@/components/ai/AiEditPanel";
+import { AiBothPanel } from "@/components/ai/AiBothPanel";
 import { Sparkle } from "@/components/ai/Sparkle";
 import { campaignHistory } from "@/lib/campaignHistory";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,12 @@ const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 type Panel = "help" | "spam" | null;
 type RightView = "preview" | "ai" | "minimized" | "history";
+
+type VariantLike = { text: { message: string }; email: { subject: string; preheader: string; heading: string; body: string; ctaLabel: string } };
+const pickCopy = (v: VariantLike, kind: "text" | "email") =>
+  kind === "email"
+    ? { subject: v.email.subject, preheader: v.email.preheader, heading: v.email.heading, body: v.email.body, ctaLabel: v.email.ctaLabel }
+    : { message: v.text.message };
 
 /** Small round action used for History / Help / Spam check on each section. */
 function SectionAction({
@@ -127,6 +134,7 @@ export function CampaignEditor({
   );
   const history = useMemo(() => (source ? campaignHistory(source) : []), [source]);
   const [historyId, setHistoryId] = useState<string | null>(null);
+  const [aiMode, setAiMode] = useState<"single" | "both">("single");
   const dirty = useMemo(
     () => (draft ? JSON.stringify(draft) !== baseline : false),
     [draft, baseline],
@@ -320,6 +328,16 @@ export function CampaignEditor({
                   {!supportsEmail && (
                     <span className="text-[11px] text-muted-foreground">Text only</span>
                   )}
+                  <Button
+                    variant={rightView === "ai" && aiMode === "both" ? "brand" : "outline"}
+                    size="sm"
+                    className="ml-auto border-brand/40 px-2.5 text-brand data-[active=true]:text-brand-foreground"
+                    data-active={rightView === "ai" && aiMode === "both"}
+                    onClick={() => { setAiMode("both"); setRightView("ai"); }}
+                  >
+                    <Sparkle size={13} />
+                    AI for Direct + OTA
+                  </Button>
                 </div>
               </div>
 
@@ -338,7 +356,7 @@ export function CampaignEditor({
                                 variant="brand"
                                 size="sm"
                                 className="px-2.5"
-                                onClick={() => setRightView("ai")}
+                                onClick={() => { setAiMode("single"); setRightView("ai"); }}
                               >
                                 <Sparkle size={13} />
                                 Edit with AI
@@ -513,11 +531,33 @@ export function CampaignEditor({
                   className="absolute bottom-5 right-5 z-10 h-auto w-64 justify-start gap-3 border-brand/25 bg-card p-3 text-left shadow-lift"
                   aria-label="Expand Directful AI">
                   <span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand text-brand-foreground"><Sparkle size={15} /></span>
-                  <span className="min-w-0 flex-1"><span className="block text-[12px] font-semibold text-card-foreground">Directful AI minimized</span><span className="block truncate text-[10px] text-muted-foreground">{AUDIENCE_LABEL[audience]} · {activeChannel}</span></span>
+                  <span className="min-w-0 flex-1"><span className="block text-[12px] font-semibold text-card-foreground">Directful AI minimized</span><span className="block truncate text-[10px] text-muted-foreground">{aiMode === "both" ? "Direct + OTA" : AUDIENCE_LABEL[audience]} · {activeChannel}</span></span>
                   <Maximize2 size={15} className="text-brand" />
                 </Button>
               )}
-              {rightView === "ai" ? (
+              {rightView === "ai" && aiMode === "both" ? (
+                <AiBothPanel
+                  campaign={draft.name}
+                  kind={activeChannel}
+                  direct={pickCopy(draft.variants.direct, activeChannel)}
+                  ota={pickCopy(draft.variants.ota, activeChannel)}
+                  onApply={(key, next) =>
+                    setDraft((current) => {
+                      if (!current) return current;
+                      const copy = clone(current);
+                      const v = copy.variants[key];
+                      if (activeChannel === "email") v.email = { ...v.email, ...next } as typeof v.email;
+                      else v.text = { ...v.text, message: next.message ?? v.text.message };
+                      v.customization[activeChannel] = true;
+                      v.customized = true;
+                      v.editedBy = { by: "Sevket Yilmaz", at: Date.now() };
+                      return copy;
+                    })
+                  }
+                  onClose={() => setRightView("preview")}
+                  onMinimize={() => setRightView("minimized")}
+                />
+              ) : rightView === "ai" ? (
                 <AiEditPanel
                   embedded
                   title={`${draft.name} · ${AUDIENCE_LABEL[audience]}`}
