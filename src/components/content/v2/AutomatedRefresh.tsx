@@ -529,6 +529,11 @@ export function AutomatedRefresh() {
   const reviewedCampaigns = Object.entries(state)
     .filter(([, value]) => value.reviewed)
     .map(([id]) => id);
+  const pendingCampaigns = CAMPAIGNS.filter((item) => !state[item.id]?.reviewed);
+
+  useEffect(() => {
+    if (window.sessionStorage.getItem("content-v2-entered") === "true") setEntered(true);
+  }, []);
 
   const openReview = (id: string) => {
     setReviewId(id);
@@ -641,7 +646,12 @@ export function AutomatedRefresh() {
           </section>
         </main>
       ) : (
-        <V2Workspace onReview={openReview} reviewedCampaigns={reviewedCampaigns} />
+        <V2Workspace
+          onReview={openReview}
+          reviewedCampaigns={reviewedCampaigns}
+          pendingReviewCount={pendingCampaigns.length}
+          onContinueReview={() => openReview(pendingCampaigns[0]?.id ?? "alv")}
+        />
       )}
 
       <Dialog open={reviewId !== null} onOpenChange={(open) => !open && closeReview()}>
