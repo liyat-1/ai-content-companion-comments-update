@@ -56,9 +56,13 @@ const PERFORMANCE: Record<string, "up" | "down" | "steady"> = {
 export function V2Workspace({
   onReview,
   reviewedCampaigns = [],
+  pendingReviewCount = 0,
+  onContinueReview,
 }: {
   onReview?: (id: string) => void;
   reviewedCampaigns?: string[];
+  pendingReviewCount?: number;
+  onContinueReview?: () => void;
 }) {
   const v2 = useV2();
   const { campaigns } = useMarketing();
@@ -181,6 +185,27 @@ export function V2Workspace({
                 Update with AI
               </Button>
             </header>
+            {pendingReviewCount > 0 && onContinueReview && (
+              <section
+                className="mb-4 flex flex-wrap items-center gap-3 border-l-2 border-brand bg-brand-soft/35 px-4 py-3"
+                aria-label="Content awaiting review"
+              >
+                <span className="grid size-8 shrink-0 place-items-center rounded-md bg-brand text-brand-foreground">
+                  <Sparkles size={15} />
+                </span>
+                <div className="min-w-[220px] flex-1">
+                  <p className="text-[13px] font-semibold text-card-foreground">
+                    We refreshed your invite content
+                  </p>
+                  <p className="mt-0.5 text-[11.5px] leading-5 text-muted-foreground">
+                    {pendingReviewCount} {pendingReviewCount === 1 ? "suggestion still needs" : "suggestions still need"} your review. Your previous versions remain available.
+                  </p>
+                </div>
+                <Button size="sm" variant="brand" onClick={onContinueReview}>
+                  See Directful’s suggestions
+                </Button>
+              </section>
+            )}
             {selected.status === "Upcoming" && !v2.pusherDismissed && (
               <section className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-brand/20 bg-brand-soft/35 px-4 py-3 sm:px-5">
                 <span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">

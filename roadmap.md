@@ -323,3 +323,8 @@
 - [x] Turn Compare to previous into a dated publication dropdown with a current-draft return
 - [x] Remove the oversized personalization row and strengthen the AI panel's visual separation
 
+## V2 incomplete-review reminder
+
+- [x] Keep a compact refresh reminder above the content calendar while campaign suggestions remain unreviewed
+- [x] Continue directly from the first pending campaign and remove the reminder after all suggestions are reviewed
+
