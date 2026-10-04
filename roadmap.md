@@ -328,3 +328,10 @@
 - [x] Keep a compact refresh reminder above the content calendar while campaign suggestions remain unreviewed
 - [x] Continue directly from the first pending campaign and remove the reminder after all suggestions are reviewed
 
+## V2 recommendation review cleanup
+
+- [x] Organize the review by current content and Directful recommendation, showing Direct and OTA email and text together
+- [x] Remove decorative AI icons from the review and surrounding content page; use faint blue for recommendation highlights
+- [x] Keep content history readable with publication details, performance, expandable copy and version selection
+- [x] Verify history, adoption and reversal on desktop and narrow screens
+

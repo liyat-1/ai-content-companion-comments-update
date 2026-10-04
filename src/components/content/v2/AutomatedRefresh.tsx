@@ -404,7 +404,7 @@ function ContentPreview({
           <h5 className="text-[11px] font-semibold text-card-foreground">Text</h5>
         </div>
         <div className="p-3">
-            <p className={`max-w-[90%] rounded-[14px] rounded-bl-sm px-3 py-2 text-[11.5px] leading-5 ${recommended ? "bg-brand-soft text-card-foreground" : "bg-muted text-card-foreground"}`}>
+          <p className={`max-w-[90%] rounded-[14px] rounded-bl-sm px-3 py-2 text-[11.5px] leading-5 ${recommended ? "bg-brand-soft/50 text-card-foreground" : "bg-muted text-card-foreground"}`}>
             <DiffText parts={recommended ? diff.current : diff.previous} />
           </p>
         </div>
@@ -740,7 +740,7 @@ export function AutomatedRefresh() {
 
       <Dialog open={reviewId !== null} onOpenChange={(open) => !open && closeReview()}>
         <DialogContent className="max-h-[90vh] max-w-5xl overflow-hidden border-border bg-card p-0 shadow-float">
-                     <DialogHeader className="border-b border-border px-5 py-3 pr-12">
+          <DialogHeader className="border-b border-border px-5 py-3 pr-12">
              <div className="flex flex-wrap items-center justify-between gap-3">
                <DialogTitle className="text-[17px]">Directful content review</DialogTitle>
                <div className="flex items-center gap-1" aria-label="Invite timing">
@@ -801,7 +801,7 @@ export function AutomatedRefresh() {
                  </div>
                </section>
              </div>
-<div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
               <section className="rounded-md border border-border p-3.5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">Creative shift</p>
                 <h3 className="mt-1 text-[15px] font-semibold text-card-foreground">
