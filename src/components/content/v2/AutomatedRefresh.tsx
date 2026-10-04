@@ -403,41 +403,47 @@ function CompactComparison({
   channel,
   previous,
   current,
-  previousMeta,
+  leftLabel,
+  leftMeta,
+  rightLabel,
+  rightMeta,
 }: {
   channel: Channel;
   previous: string;
   current: string;
-  previousMeta: string;
+  leftLabel: string;
+  leftMeta: string;
+  rightLabel: string;
+  rightMeta: string;
 }) {
   const diff = wordDiff(previous, current);
+  const head = (isRight: boolean) => (
+    <div className="min-w-0">
+      <p className={`truncate text-[11.5px] font-semibold ${isRight ? "text-brand" : "text-card-foreground"}`}>
+        {isRight ? rightLabel : leftLabel}
+      </p>
+      <p className="truncate text-[10px] text-muted-foreground">{isRight ? rightMeta : leftMeta}</p>
+    </div>
+  );
   if (channel === "Text")
     return (
-      <div className="grid gap-3 md:grid-cols-2">
-        <article className="rounded-md border border-border bg-card p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-semibold text-card-foreground">Previous content</p>
-              <p className="text-[10px] text-muted-foreground">{previousMeta}</p>
+      <div className="grid gap-2.5 md:grid-cols-2">
+        {[false, true].map((isRight) => (
+          <article
+            key={String(isRight)}
+            className={`rounded-md border bg-card p-3 ${isRight ? "border-brand/35" : "border-border"}`}
+          >
+            <div className="mb-2 flex items-center justify-between gap-2">
+              {head(isRight)}
+              {isRight ? <AiMark size={20} /> : <MessageSquareText size={13} className="text-muted-foreground" />}
             </div>
-            <MessageSquareText size={14} className="text-muted-foreground" />
-          </div>
-          <div className="max-w-[92%] rounded-[14px] rounded-bl-sm bg-muted px-3 py-2.5 text-[12px] leading-5">
-            <DiffText parts={diff.previous} />
-          </div>
-        </article>
-        <article className="rounded-md border border-brand/35 bg-card p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-semibold text-brand">Directful recommendation</p>
-              <p className="text-[10px] text-muted-foreground">Updated 2 min ago</p>
+            <div
+              className={`max-w-[92%] rounded-[14px] rounded-bl-sm px-3 py-2 text-[11.5px] leading-5 ${isRight ? "bg-brand text-brand-foreground" : "bg-muted"}`}
+            >
+              <DiffText parts={isRight ? diff.current : diff.previous} />
             </div>
-            <AiMark size={23} />
-          </div>
-          <div className="max-w-[92%] rounded-[14px] rounded-bl-sm bg-brand px-3 py-2.5 text-[12px] leading-5 text-brand-foreground">
-            <DiffText parts={diff.current} />
-          </div>
-        </article>
+          </article>
+        ))}
       </div>
     );
   const oldEmail = emailFields(previous, false);
@@ -449,42 +455,31 @@ function CompactComparison({
     ["Button", oldEmail.cta, newEmail.cta],
   ] as const;
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {[false, true].map((isCurrent) => (
+    <div className="grid gap-2.5 md:grid-cols-2">
+      {[false, true].map((isRight) => (
         <article
-          key={String(isCurrent)}
-          className={`overflow-hidden rounded-md border bg-card ${isCurrent ? "border-brand/35" : "border-border"}`}
+          key={String(isRight)}
+          className={`overflow-hidden rounded-md border bg-card ${isRight ? "border-brand/35" : "border-border"}`}
         >
-          <div className="flex items-center justify-between border-b border-border bg-muted/35 px-3 py-2">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/35 px-3 py-2">
+            <div className="flex min-w-0 items-center gap-2">
               <span className="flex gap-1" aria-hidden>
                 {[0, 1, 2].map((dot) => (
                   <span key={dot} className="size-1.5 rounded-full bg-muted-foreground/45" />
                 ))}
               </span>
-              <div>
-                <p
-                  className={`text-[12px] font-semibold ${isCurrent ? "text-brand" : "text-card-foreground"}`}
-                >
-                  {isCurrent ? "Directful recommendation" : "Previous content"}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {isCurrent ? "Updated 2 min ago" : previousMeta}
-                </p>
-              </div>
+              {head(isRight)}
             </div>
-            {isCurrent && <AiMark size={23} />}
+            {isRight ? <AiMark size={20} /> : <Mail size={13} className="text-muted-foreground" />}
           </div>
           <div className="divide-y divide-border">
             {fields.map(([label, oldValue, newValue]) => {
               const fieldDiff = wordDiff(oldValue, newValue);
               return (
-                <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] gap-2 px-3 py-2">
+                <div key={label} className="grid grid-cols-[66px_minmax(0,1fr)] gap-2 px-3 py-1.5">
                   <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
-                  <p
-                    className={`text-[11px] leading-4 ${label === "Button" ? "font-semibold text-brand" : ""}`}
-                  >
-                    <DiffText parts={isCurrent ? fieldDiff.current : fieldDiff.previous} />
+                  <p className={`text-[11px] leading-4 ${label === "Button" ? "font-semibold text-brand" : ""}`}>
+                    <DiffText parts={isRight ? fieldDiff.current : fieldDiff.previous} />
                   </p>
                 </div>
               );
@@ -493,6 +488,132 @@ function CompactComparison({
         </article>
       ))}
     </div>
+  );
+}
+
+/** Demo stats for a published version: the replaced version uses the campaign's real prior metrics. */
+function versionStats(campaign: Campaign, index: number) {
+  const click = campaign.metrics.find((m) => m.label === "Click rate")?.prev ?? 4;
+  const spam = campaign.metrics.find((m) => m.label === "Spam rate")?.prev ?? 0.5;
+  const offsets = [0, -0.6, -1.1, -1.5];
+  return {
+    click: Math.max(0.5, click + (offsets[index] ?? -1.8)),
+    spam: Math.max(0.1, spam + index * 0.1),
+  };
+}
+
+const versionStatus = (index: number) =>
+  index === 0 ? "Live until refresh" : index === 1 ? "Archived" : "Archived · Original";
+
+function HistoryDialog({
+  campaign,
+  open,
+  selectedId,
+  onClose,
+  onUse,
+}: {
+  campaign: Campaign;
+  open: boolean;
+  selectedId: string;
+  onClose: () => void;
+  onUse: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = (key: string, value: string) => {
+    void navigator.clipboard?.writeText(value);
+    setCopied(key);
+    window.setTimeout(() => setCopied((c) => (c === key ? null : c)), 1400);
+  };
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[80vh] max-w-xl overflow-hidden border-border bg-card p-0 shadow-float">
+        <DialogHeader className="border-b border-border px-5 py-3.5 pr-12">
+          <DialogTitle className="text-[16px]">{campaign.name} · History</DialogTitle>
+          <p className="text-[11px] text-muted-foreground">Every published version, who wrote it and how it performed.</p>
+        </DialogHeader>
+        <div className="max-h-[calc(80vh-70px)] space-y-2 overflow-y-auto px-5 py-4">
+          {campaign.history.map((version, index) => {
+            const stats = versionStats(campaign, index);
+            const open = expanded === version.id;
+            const inReview = selectedId === version.id;
+            return (
+              <article
+                key={version.id}
+                className={`overflow-hidden rounded-md border ${inReview ? "border-brand/40 bg-brand-soft/25" : "border-border bg-card"}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setExpanded(open ? null : version.id)}
+                  className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-2.5 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-2">
+                      <span className="text-[12.5px] font-semibold text-card-foreground">{version.date}</span>
+                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[9.5px] font-semibold text-muted-foreground">
+                        {versionStatus(index)}
+                      </span>
+                      {inReview && (
+                        <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 text-[9.5px] font-semibold text-brand">In this review</span>
+                      )}
+                    </span>
+                    <span className="block truncate text-[10.5px] text-muted-foreground">{version.editor}</span>
+                  </span>
+                  <span className="flex gap-3 text-right">
+                    <span>
+                      <span className="block text-[9px] text-muted-foreground">Click</span>
+                      <span className="text-[11.5px] font-semibold text-card-foreground">{fmt(stats.click)}</span>
+                    </span>
+                    <span>
+                      <span className="block text-[9px] text-muted-foreground">Spam</span>
+                      <span className="text-[11.5px] font-semibold text-card-foreground">{fmt(stats.spam)}</span>
+                    </span>
+                  </span>
+                  <ChevronDown size={14} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+                </button>
+                {open && (
+                  <div className="space-y-2 border-t border-border px-3 py-3">
+                    {(["Direct", "OTA"] as Audience[]).map((aud) =>
+                      (["Email", "Text"] as Channel[]).map((ch) => {
+                        const value = version.content[aud][channelKey(ch)];
+                        const key = `${version.id}-${aud}-${ch}`;
+                        return (
+                          <div key={key} className="rounded-sm border border-border bg-card p-2.5">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {aud} · {ch}
+                              </span>
+                              <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px]" onClick={() => copy(key, value)}>
+                                {copied === key ? <Check size={11} /> : <Copy size={11} />}
+                                {copied === key ? "Copied" : "Copy"}
+                              </Button>
+                            </div>
+                            <p className="text-[11px] leading-4 text-card-foreground">{value}</p>
+                          </div>
+                        );
+                      }),
+                    )}
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        variant={inReview ? "outline" : "brand"}
+                        disabled={inReview}
+                        onClick={() => {
+                          onUse(version.id);
+                          onClose();
+                        }}
+                      >
+                        {inReview ? "Used in this review" : "Use in this review"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
