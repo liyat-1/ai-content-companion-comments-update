@@ -1,25 +1,22 @@
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
-  ArrowRightIcon,
   Building2,
   Check,
   ChevronDown,
-  Clock3,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  History,
   Mail,
   MessageSquareText,
+  RotateCcw,
   Sparkles,
   TrendingDown,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { AiMark } from "@/components/content/shared";
 import { CampaignEditor } from "@/components/marketing/CampaignEditor";
@@ -629,8 +626,7 @@ export function AutomatedRefresh() {
   const { state, patch } = useStore();
   const [entered, setEntered] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);
-  const [audience, setAudience] = useState<Audience>("Direct");
-  const [channel, setChannel] = useState<Channel>("Email");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [historyId, setHistoryId] = useState<Record<string, string>>({});
   const [aiEdit, setAiEdit] = useState<{
     id: string;
@@ -641,11 +637,16 @@ export function AutomatedRefresh() {
   } | null>(null);
 
   const campaign = CAMPAIGNS.find((item) => item.id === reviewId) ?? CAMPAIGNS[0];
-  const selectedHistory =
-    campaign.history.find((item) => item.id === historyId[campaign.id]) ?? campaign.history[0];
+  const campaignIndex = CAMPAIGNS.findIndex((item) => item.id === campaign.id);
+  const baselineIndex = Math.max(
+    0,
+    campaign.history.findIndex((item) => item.id === historyId[campaign.id]),
+  );
+  const baseline = campaign.history[baselineIndex];
+  const baselineContent = baseline.content;
+  const baselineStats = versionStats(campaign, baselineIndex);
   const currentContent = state[campaign.id]?.current ?? campaign.recommended;
-  const previousCopy = selectedHistory.content[audience][channelKey(channel)];
-  const recommendedCopy = currentContent[audience][channelKey(channel)];
+  const adopted = Boolean(state[campaign.id]?.adopted);
   const result = performanceState(campaign);
   const reviewedCampaigns = Object.entries(state)
     .filter(([, value]) => value.reviewed)
@@ -660,15 +661,12 @@ export function AutomatedRefresh() {
     setReviewId(id);
     patch(id, { reviewed: true });
   };
+  const go = (step: number) =>
+    openReview(CAMPAIGNS[(campaignIndex + step + CAMPAIGNS.length) % CAMPAIGNS.length].id);
   const closeReview = () => {
     sessionStorage.setItem("content-v2-entered", "true");
     setEntered(true);
     setReviewId(null);
-  };
-  const usePrevious = () => {
-    patch(campaign.id, { reviewed: true, current: selectedHistory.content });
-    setReviewId(null);
-    setEntered(true);
   };
   const improveWithAi = () => {
     const editorId =
@@ -679,14 +677,14 @@ export function AutomatedRefresh() {
           : `lost-${campaign.id.replace("m", "")}`;
     setAiEdit({
       id: editorId,
-      context: `${selectedHistory.date} performed better because it opened with a vivid memory from the guest’s stay and matched the moment they were likely starting to plan another trip. That sense of recognition made the message feel personal rather than promotional. I’ll keep the current Directful recommendation as the starting point rather than restoring the old copy.`,
+      context: `${baseline.date} performed well because it opened with a vivid memory from the guest’s stay and matched the moment they were likely starting to plan another trip. That sense of recognition made the message feel personal rather than promotional. I’ll keep the current Directful recommendation as the starting point rather than restoring the old copy.`,
       actions: [
         "Open with a stay memory",
         "Match the guest’s planning moment",
         "Make the return feel personal",
       ],
-      audience,
-      channel,
+      audience: "Direct",
+      channel: "Email",
     });
     setReviewId(null);
     setEntered(true);
