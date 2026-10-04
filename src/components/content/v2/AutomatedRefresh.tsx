@@ -256,7 +256,7 @@ const CAMPAIGNS: Campaign[] = [
   ),
 ];
 
-type SavedState = Record<string, { reviewed?: boolean; current?: Record<Audience, Content> }>;
+type SavedState = Record<string, { reviewed?: boolean; adopted?: boolean; current?: Record<Audience, Content> }>;
 const KEY = "directful-auto-refresh-v2";
 
 export function useStore() {
