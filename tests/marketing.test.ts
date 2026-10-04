@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { migrateCampaign, seedState } from "./marketing";
+import { migrateCampaign, seedState } from "../src/lib/marketing";
 
 describe("automated invite channels", () => {
   const invites = seedState().campaigns.filter((campaign) => campaign.group === "invites");
