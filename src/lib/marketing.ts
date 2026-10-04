@@ -538,7 +538,7 @@ function variantFrom(seed: Seed, key: AudienceKey): Variant {
   };
 }
 
-function seedState(): MarketingState {
+export function seedState(): MarketingState {
   return {
     campaigns: SEEDS.map((s, i) => ({
       id: s.id,
@@ -547,7 +547,7 @@ function seedState(): MarketingState {
       purpose: s.purpose,
       group: s.group,
       enabled: i % 5 !== 4,
-      strategy: s.strategy ?? "text",
+      strategy: s.strategy ?? (s.group === "invites" ? "text_email" : "text"),
       promotionMode: s.id === "no-show" ? "none" : "inherit",
       promotionId: null,
       variants: { direct: variantFrom(s, "direct"), ota: variantFrom(s, "ota") },
@@ -604,6 +604,7 @@ function migrateCampaign(c: MarketingCampaign): MarketingCampaign {
   return {
     ...c,
     purpose: c.purpose ?? seed?.purpose ?? "Keep guests informed at the right moment in their journey.",
+    strategy: c.group === "invites" && c.strategy === "text" ? "text_email" : c.strategy,
     variants: { direct: fix(c.variants.direct), ota: fix(c.variants.ota) },
   };
 }

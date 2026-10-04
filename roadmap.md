@@ -335,3 +335,9 @@
 - [x] Keep content history readable with publication details, performance, expandable copy and version selection
 - [x] Verify history, adoption and reversal on desktop and narrow screens
 
+## Seven invite formats
+
+- [x] Remove Just booked, Before arrival, During stay, and Post-checkout from automated invites
+- [x] Show email and text previews for each of the seven remaining invites
+- [ ] Make all seven invite campaigns send both email and text, including saved campaigns; verify in the editor
+
