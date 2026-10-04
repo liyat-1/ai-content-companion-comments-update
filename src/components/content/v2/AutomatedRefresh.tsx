@@ -478,12 +478,12 @@ function HistoryDialog({
   };
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[80vh] max-w-xl overflow-hidden border-border bg-card p-0 shadow-float">
-        <DialogHeader className="border-b border-border px-5 py-3.5 pr-12">
-          <DialogTitle className="text-[16px]">{campaign.name} · History</DialogTitle>
-          <p className="text-[11px] text-muted-foreground">Every published version, who wrote it and how it performed.</p>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden border-border bg-card p-0 shadow-float">
+        <DialogHeader className="border-b border-border px-5 py-4 pr-12">
+          <DialogTitle className="text-[17px]">Content history</DialogTitle>
+          <p className="text-[12px] text-muted-foreground">{campaign.name} · Published versions</p>
         </DialogHeader>
-        <div className="max-h-[calc(80vh-70px)] space-y-2 overflow-y-auto px-5 py-4">
+        <div className="max-h-[calc(85vh-85px)] space-y-2.5 overflow-y-auto bg-muted/30 px-5 py-4">
           {campaign.history.map((version, index) => {
             const stats = versionStats(campaign, index);
             const open = expanded === version.id;
@@ -491,60 +491,70 @@ function HistoryDialog({
             return (
               <article
                 key={version.id}
-                className={`overflow-hidden rounded-md border ${inReview ? "border-brand/40 bg-brand-soft/25" : "border-border bg-card"}`}
+                className={`overflow-hidden rounded-md border bg-card shadow-card ${inReview ? "border-brand/45" : "border-border"}`}
               >
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={() => setExpanded(open ? null : version.id)}
-                  className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-2.5 text-left"
+                  aria-expanded={open}
+                  className="grid h-auto w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-none px-4 py-3 text-left sm:grid-cols-[minmax(0,1fr)_auto_auto]"
                 >
                   <span className="min-w-0">
-                    <span className="flex items-center gap-2">
-                      <span className="text-[12.5px] font-semibold text-card-foreground">{version.date}</span>
-                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[9.5px] font-semibold text-muted-foreground">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[13px] font-semibold text-card-foreground">{version.date}</span>
+                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                         {versionStatus(index)}
                       </span>
                       {inReview && (
-                        <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 text-[9.5px] font-semibold text-brand">In this review</span>
+                        <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand">In this review</span>
                       )}
                     </span>
-                    <span className="block truncate text-[10.5px] text-muted-foreground">{version.editor}</span>
+                    <span className="mt-1 block text-[11px] font-normal text-muted-foreground">{version.editor}</span>
                   </span>
-                  <span className="flex gap-3 text-right">
+                  <span className="hidden gap-4 border-l border-border pl-4 text-left sm:flex">
                     <span>
-                      <span className="block text-[9px] text-muted-foreground">Click</span>
-                      <span className="text-[11.5px] font-semibold text-card-foreground">{fmt(stats.click)}</span>
+                      <span className="block text-[10px] font-normal text-muted-foreground">Click rate</span>
+                      <span className="text-[12px] font-semibold text-card-foreground">{fmt(stats.click)}</span>
                     </span>
                     <span>
-                      <span className="block text-[9px] text-muted-foreground">Spam</span>
-                      <span className="text-[11.5px] font-semibold text-card-foreground">{fmt(stats.spam)}</span>
+                      <span className="block text-[10px] font-normal text-muted-foreground">Spam rate</span>
+                      <span className="text-[12px] font-semibold text-card-foreground">{fmt(stats.spam)}</span>
                     </span>
                   </span>
                   <ChevronDown size={14} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-                </button>
+                </Button>
                 {open && (
-                  <div className="space-y-2 border-t border-border px-3 py-3">
-                    {(["Direct", "OTA"] as Audience[]).map((aud) =>
-                      (["Email", "Text"] as Channel[]).map((ch) => {
-                        const value = version.content[aud][channelKey(ch)];
-                        const key = `${version.id}-${aud}-${ch}`;
-                        return (
-                          <div key={key} className="rounded-sm border border-border bg-card p-2.5">
-                            <div className="mb-1 flex items-center justify-between">
-                              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                {aud} · {ch}
-                              </span>
-                              <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px]" onClick={() => copy(key, value)}>
-                                {copied === key ? <Check size={11} /> : <Copy size={11} />}
-                                {copied === key ? "Copied" : "Copy"}
-                              </Button>
-                            </div>
-                            <p className="text-[11px] leading-4 text-card-foreground">{value}</p>
+                  <div className="border-t border-border px-4 py-4">
+                    <div className="mb-4 flex gap-6 border-b border-border pb-3 text-[11px] sm:hidden">
+                      <span>Click rate <strong className="ml-1 text-card-foreground">{fmt(stats.click)}</strong></span>
+                      <span>Spam rate <strong className="ml-1 text-card-foreground">{fmt(stats.spam)}</strong></span>
+                    </div>
+                    <div className="space-y-4">
+                      {(["Direct", "OTA"] as Audience[]).map((aud) => (
+                        <section key={aud}>
+                          <h3 className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">{aud} guests</h3>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {(["Email", "Text"] as Channel[]).map((ch) => {
+                              const value = version.content[aud][channelKey(ch)];
+                              const key = `${version.id}-${aud}-${ch}`;
+                              return (
+                                <div key={key} className="min-w-0 rounded-sm border border-border bg-muted/25 p-3">
+                                  <div className="mb-2 flex items-center justify-between gap-2">
+                                    <span className="text-[11px] font-semibold text-card-foreground">{ch}</span>
+                                    <Button variant="ghost" size="sm" className="h-7 px-1.5 text-[10px]" onClick={() => copy(key, value)}>
+                                      {copied === key ? <Check size={12} /> : <Copy size={12} />}
+                                      {copied === key ? "Copied" : "Copy"}
+                                    </Button>
+                                  </div>
+                                  <p className="break-words text-[11px] leading-5 text-card-foreground">{value}</p>
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      }),
-                    )}
-                    <div className="flex justify-end">
+                        </section>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex justify-end border-t border-border pt-4">
                       <Button
                         size="sm"
                         variant={inReview ? "outline" : "brand"}
