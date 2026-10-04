@@ -361,7 +361,7 @@ function DiffText({ parts }: { parts: DiffPart[] }) {
             part.kind === "removed"
               ? "opacity-60 line-through decoration-warning/70"
               : part.kind === "added"
-                ? "rounded-sm bg-highlight px-0.5 font-semibold text-highlight-foreground"
+                ? "rounded-sm bg-brand-soft px-0.5 font-semibold text-brand"
                 : ""
           }
         >
@@ -404,7 +404,7 @@ function ContentPreview({
           <h5 className="text-[11px] font-semibold text-card-foreground">Text</h5>
         </div>
         <div className="p-3">
-          <p className={`max-w-[90%] rounded-[14px] rounded-bl-sm px-3 py-2 text-[11.5px] leading-5 ${recommended ? "bg-brand text-brand-foreground" : "bg-muted text-card-foreground"}`}>
+            <p className={`max-w-[90%] rounded-[14px] rounded-bl-sm px-3 py-2 text-[11.5px] leading-5 ${recommended ? "bg-brand-soft text-card-foreground" : "bg-muted text-card-foreground"}`}>
             <DiffText parts={recommended ? diff.current : diff.previous} />
           </p>
         </div>
@@ -662,7 +662,6 @@ export function AutomatedRefresh() {
             <div className="grid min-h-[540px] lg:grid-cols-[1.02fr_.98fr]">
               <div className="flex flex-col justify-center px-7 py-12 sm:px-12 lg:px-16">
                 <div className="flex items-center gap-3">
-                  <AiMark size={40} live />
                   <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-brand">
                     Automated Invites
                   </p>
@@ -704,7 +703,7 @@ export function AutomatedRefresh() {
                       <span className="text-[11px] font-semibold text-muted-foreground">
                         AFTER LAST VISIT
                       </span>
-                      <Attribution />
+                      <span className="text-[11px] font-semibold text-brand">Directful recommendation</span>
                     </div>
                     <p className="mt-4 text-[16px] font-semibold text-card-foreground">
                       A warmer reason to return
@@ -828,15 +827,10 @@ export function AutomatedRefresh() {
                 </div>
               </section>
               <section className="rounded-md border border-border p-3.5">
-                <div className="flex items-center gap-2">
-                  <span className="grid size-7 shrink-0 place-items-center rounded-sm bg-brand text-brand-foreground">
-                    <Sparkles size={13} />
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">Why this direction</p>
-                    <h3 className="text-[15px] font-semibold text-card-foreground">Built for this guest moment</h3>
-                  </div>
-                </div>
+                 <div>
+                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">Why this direction</p>
+                   <h3 className="text-[15px] font-semibold text-card-foreground">Built for this guest moment</h3>
+                 </div>
                 <p className="mt-3 text-[11px] leading-5 text-card-foreground">{campaign.why}</p>
                 <p className="mt-3 border-t border-border pt-3 text-[10px] leading-4 text-muted-foreground">
                   The recommendation adapts by audience. OTA copy introduces direct-booking value;
