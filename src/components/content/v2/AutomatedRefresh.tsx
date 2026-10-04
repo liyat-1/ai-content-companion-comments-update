@@ -776,12 +776,12 @@ export function AutomatedRefresh() {
       )}
 
       <Dialog open={reviewId !== null} onOpenChange={(open) => !open && closeReview()}>
-        <DialogContent className="max-h-[88vh] max-w-4xl overflow-hidden border-border bg-card p-0 shadow-float">
-          <DialogHeader className="border-b border-border px-5 py-4 pr-12">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+        <DialogContent className="max-h-[90vh] max-w-5xl overflow-hidden border-border bg-card p-0 shadow-float">
+          <DialogHeader className="border-b border-border px-5 py-3 pr-12">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <DialogTitle className="text-[18px]">Directful content review</DialogTitle>
-                <div className="mt-1 flex flex-wrap items-center gap-3">
+                <DialogTitle className="text-[17px]">Directful content review</DialogTitle>
+                <div className="mt-0.5 flex flex-wrap items-center gap-3">
                   <Attribution />
                   <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                     <Building2 size={12} />
@@ -789,123 +789,99 @@ export function AutomatedRefresh() {
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <SegmentControl
-                  value={audience}
-                  label="Guest audience"
-                  options={[
-                    { value: "Direct", label: "Direct" },
-                    { value: "OTA", label: "OTA" },
-                  ]}
-                  onChange={setAudience}
-                />
-                <SegmentControl
-                  value={channel}
-                  label="Message channel"
-                  options={[
-                    { value: "Email", label: "Email", icon: <Mail size={12} /> },
-                    { value: "Text", label: "Text", icon: <MessageSquareText size={12} /> },
-                  ]}
-                  onChange={setChannel}
-                />
+              <div className="flex items-center gap-1" aria-label="Invite timing">
+                <Button variant="outline" size="icon" className="size-8" aria-label="Previous campaign" onClick={() => go(-1)}>
+                  <ChevronLeft size={15} />
+                </Button>
+                <div className="min-w-[150px] px-2 text-center">
+                  <p className="text-[13px] font-semibold text-card-foreground">{campaign.name}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {campaignIndex + 1} of {CAMPAIGNS.length} ·{" "}
+                    <span className={adopted ? "font-semibold text-brand" : ""}>
+                      {adopted ? "Using Directful content" : "Using current content"}
+                    </span>
+                  </p>
+                </div>
+                <Button variant="outline" size="icon" className="size-8" aria-label="Next campaign" onClick={() => go(1)}>
+                  <ChevronRight size={15} />
+                </Button>
               </div>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Campaign status">
+              {CAMPAIGNS.map((item) => {
+                const isAdopted = state[item.id]?.adopted;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => openReview(item.id)}
+                    className={`inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] ${item.id === campaign.id ? "border-foreground/40 font-semibold text-card-foreground" : "border-border text-muted-foreground"}`}
+                  >
+                    <span className={`size-1.5 rounded-full ${isAdopted ? "bg-brand" : "bg-muted-foreground/40"}`} />
+                    {item.name}
+                  </button>
+                );
+              })}
+              <span className="ml-auto flex items-center gap-3 text-[10px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-brand" />Directful adopted</span>
+                <span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-muted-foreground/40" />Current content</span>
+              </span>
             </div>
           </DialogHeader>
-          <div className="max-h-[calc(88vh-72px)] overflow-y-auto px-5 py-4">
-            <nav
-              className="mb-4 flex gap-1 overflow-x-auto border-b border-border pb-2"
-              aria-label="Invite timing"
-            >
-              {CAMPAIGNS.map((item) => (
-                <Button
-                  key={item.id}
-                  variant={campaign.id === item.id ? "default" : "ghost"}
-                  size="sm"
-                  className="h-7 shrink-0 px-2.5 text-[11px]"
-                  onClick={() => openReview(item.id)}
-                >
-                  {state[item.id]?.reviewed && <Check size={11} />}
-                  {item.name}
-                </Button>
-              ))}
-            </nav>
+          <div className="max-h-[calc(90vh-118px)] overflow-y-auto px-5 py-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="text-[18px] font-semibold text-card-foreground">{campaign.name}</h2>
-                <p className="text-[11px] text-muted-foreground">
-                  Comparing Directful’s recommendation with previous content
-                </p>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 text-[11px]">
-                    <Clock3 size={13} />
-                    {selectedHistory.date}
-                    <ChevronDown size={12} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  {campaign.history.map((version, index) => (
-                    <DropdownMenuItem
-                      key={version.id}
-                      onSelect={() =>
-                        setHistoryId((value) => ({ ...value, [campaign.id]: version.id }))
-                      }
-                      className="flex items-start justify-between"
-                    >
-                      <span>
-                        <span className="block text-[12px] font-semibold">{version.date}</span>
-                        <span className="block text-[10px] text-muted-foreground">
-                          {version.editor}
-                          {index === 0 ? " · Replaced version" : ""}
-                        </span>
-                      </span>
-                      {selectedHistory.id === version.id && (
-                        <Check size={13} className="text-brand" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <p className="text-[11.5px] text-muted-foreground">
+                {adopted
+                  ? `Directful’s content is now live. Your ${baseline.date} content is kept as previous content.`
+                  : `Your ${baseline.date} content stays live until you adopt Directful’s recommendation.`}
+              </p>
+              <Button variant="outline" size="sm" className="h-8 text-[11px]" onClick={() => setHistoryOpen(true)}>
+                <History size={13} />
+                History
+              </Button>
             </div>
-            <CompactComparison
-              channel={channel}
-              previous={previousCopy}
-              current={recommendedCopy}
-              previousMeta={selectedHistory.date}
-            />
+            <div className="space-y-4">
+              {(["Direct", "OTA"] as Audience[]).map((aud) => (
+                <section key={aud}>
+                  <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-card-foreground">
+                    {aud} guests
+                  </h3>
+                  <div className="space-y-2.5">
+                    {(["Email", "Text"] as Channel[]).map((ch) => (
+                      <CompactComparison
+                        key={ch}
+                        channel={ch}
+                        previous={baselineContent[aud][channelKey(ch)]}
+                        current={currentContent[aud][channelKey(ch)]}
+                        leftLabel={`${adopted ? "Previous content" : "Current content"} · ${ch}`}
+                        leftMeta={`${baseline.date} · ${baseline.editor}`}
+                        rightLabel={`${adopted ? "Directful content · In use" : "Directful recommendation"} · ${ch}`}
+                        rightMeta={adopted ? "Adopted in this review" : "Updated 2 min ago"}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <section className="rounded-md border border-border p-3.5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">
-                  Creative shift
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">Creative shift</p>
                 <h3 className="mt-1 text-[15px] font-semibold text-card-foreground">
                   From a general follow-up to a reason to return
                 </h3>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="rounded-sm bg-muted/55 p-2.5">
-                    <p className="text-[9px] font-semibold uppercase text-muted-foreground">
-                      Before
-                    </p>
-                    <p className="mt-1.5 text-[11px] leading-4 text-card-foreground">
-                      {campaign.oldDirection}
-                    </p>
+                    <p className="text-[9px] font-semibold uppercase text-muted-foreground">Before</p>
+                    <p className="mt-1.5 text-[11px] leading-4 text-card-foreground">{campaign.oldDirection}</p>
                   </div>
                   <div className="rounded-sm bg-brand-soft/65 p-2.5">
-                    <p className="text-[9px] font-semibold uppercase text-brand">
-                      Directful direction
-                    </p>
-                    <p className="mt-1.5 text-[11px] leading-4 text-card-foreground">
-                      {campaign.newDirection}
-                    </p>
+                    <p className="text-[9px] font-semibold uppercase text-brand">Directful direction</p>
+                    <p className="mt-1.5 text-[11px] leading-4 text-card-foreground">{campaign.newDirection}</p>
                   </div>
                 </div>
                 <div className="mt-3 grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
                   {campaign.changes.map((change) => (
-                    <span
-                      key={change}
-                      className="inline-flex items-start gap-1.5 text-[10px] leading-4 text-card-foreground"
-                    >
+                    <span key={change} className="inline-flex items-start gap-1.5 text-[10px] leading-4 text-card-foreground">
                       <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-brand-soft text-brand">
                         <Check size={10} />
                       </span>
@@ -920,12 +896,8 @@ export function AutomatedRefresh() {
                     <Sparkles size={13} />
                   </span>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">
-                      Why this direction
-                    </p>
-                    <h3 className="text-[15px] font-semibold text-card-foreground">
-                      Built for this guest moment
-                    </h3>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">Why this direction</p>
+                    <h3 className="text-[15px] font-semibold text-card-foreground">Built for this guest moment</h3>
                   </div>
                 </div>
                 <p className="mt-3 text-[11px] leading-5 text-card-foreground">{campaign.why}</p>
@@ -938,100 +910,65 @@ export function AutomatedRefresh() {
             <section className="mt-3 rounded-md border border-border p-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">
-                    Live signal
-                  </p>
-                  <h3 className="mt-0.5 text-[15px] font-semibold text-card-foreground">
-                    How it’s performing
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">Performance</p>
+                  <h3 className="mt-0.5 text-[14px] font-semibold text-card-foreground">
+                    {adopted ? "Previous" : "Current"} content · {baseline.date}
                   </h3>
                 </div>
-                <span
-                  className={`rounded-sm px-2.5 py-1.5 text-[10px] font-semibold ${result === "previous-better" ? "bg-warning-soft text-warning" : "bg-brand-soft text-brand"}`}
-                >
-                  {result === "better"
-                    ? "Recommendation performing better"
-                    : result === "previous-better"
-                      ? `${selectedHistory.date} performed better`
-                      : "Performing in line"}
-                </span>
-              </div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                {campaign.metrics.map((metric) => {
-                  const improved = metric.lowerIsBetter
-                    ? metric.cur < metric.prev
-                    : metric.cur > metric.prev;
-                  return (
-                    <div key={metric.label} className="rounded-sm border border-border p-3">
-                      <p className="text-[10px] font-semibold text-muted-foreground">
-                        {metric.label}
-                      </p>
-                      <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-end gap-2">
-                        <div>
-                          <p className="text-[9px] text-muted-foreground">
-                            {selectedHistory.date.split(",")[0]}
-                          </p>
-                          <p className="text-[14px] font-semibold text-card-foreground">
-                            {fmt(metric.prev)}
-                          </p>
-                        </div>
-                        <ArrowRightIcon size={13} className="mb-1 text-muted-foreground" />
-                        <div className="text-right">
-                          <p className="text-[9px] text-muted-foreground">Recommendation</p>
-                          <p
-                            className={`text-[14px] font-semibold ${improved ? "text-brand" : metric.cur === metric.prev ? "text-card-foreground" : "text-warning"}`}
-                          >
-                            {fmt(metric.cur)}{" "}
-                            {improved
-                              ? metric.lowerIsBetter
-                                ? "↓"
-                                : "↑"
-                              : metric.cur === metric.prev
-                                ? ""
-                                : metric.lowerIsBetter
-                                  ? "↑"
-                                  : "↓"}
-                          </p>
-                        </div>
-                      </div>
+                <div className="flex gap-2">
+                  {[
+                    ["Click rate", baselineStats.click],
+                    ["Spam rate", baselineStats.spam],
+                  ].map(([label, value]) => (
+                    <div key={label as string} className="min-w-[96px] rounded-sm border border-border px-3 py-2">
+                      <p className="text-[10px] text-muted-foreground">{label}</p>
+                      <p className="text-[15px] font-semibold text-card-foreground">{fmt(value as number)}</p>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-              <p className="mt-3 text-[10px] leading-4 text-muted-foreground">
-                Directful’s recommendation is compared with the selected {selectedHistory.date}{" "}
-                version across participating properties.
+              <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+                Directful’s recommendation has not been sent yet, so performance will appear once guests receive it.
               </p>
-              {result === "previous-better" && (
+              {result === "previous-better" && !adopted && (
                 <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                  <span className="mr-auto inline-flex items-center gap-1 text-[10px] font-semibold text-warning">
+                  <span className="mr-auto inline-flex items-center gap-1 text-[10.5px] font-semibold text-warning">
                     <TrendingDown size={12} />
-                    Recommendation is trailing this version
+                    Your current content is performing strongly — carry its strengths into Directful’s content
                   </span>
                   <Button variant="brand" size="sm" onClick={improveWithAi}>
                     Improve with AI
                   </Button>
-                  <Button variant="outline" size="sm" onClick={usePrevious}>
-                    Use this version & publish
-                  </Button>
                 </div>
               )}
             </section>
-            {selectedHistory.id !== campaign.history[0].id && result !== "previous-better" && (
-              <div className="mt-3 flex justify-end">
-                <Button variant="outline" size="sm" onClick={usePrevious}>
-                  Use this version & publish
-                </Button>
-              </div>
-            )}
-            <div className="mt-4 flex justify-end border-t border-border pt-3">
+            <div className="sticky bottom-0 -mx-5 -mb-4 mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border bg-card px-5 py-3">
               <Button variant="outline" onClick={closeReview}>
                 <X size={14} />
                 Close
               </Button>
+              {adopted ? (
+                <Button variant="outline" onClick={() => patch(campaign.id, { adopted: false })}>
+                  <RotateCcw size={14} />
+                  Use previous content
+                </Button>
+              ) : (
+                <Button variant="brand" onClick={() => patch(campaign.id, { adopted: true, reviewed: true })}>
+                  <Check size={14} />
+                  Adopt & use
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>
       </Dialog>
+      <HistoryDialog
+        campaign={campaign}
+        open={historyOpen}
+        selectedId={baseline.id}
+        onClose={() => setHistoryOpen(false)}
+        onUse={(id) => setHistoryId((value) => ({ ...value, [campaign.id]: id }))}
+      />
       {aiEdit && (
         <CampaignEditor
           id={aiEdit.id}
