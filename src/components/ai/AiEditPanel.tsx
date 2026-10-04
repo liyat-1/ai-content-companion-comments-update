@@ -35,20 +35,59 @@ import { editAssist } from "@/lib/ai.functions";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Sparkle } from "./Sparkle";
 import {
-  EDIT_QUICK_ACTIONS,
   FEEDBACK_REASONS,
   diffWords,
   refine,
   type Copy,
 } from "@/lib/aiWriter";
+import { ADAPT_BRAND, CHECK_BRAND, HOTEL_PROFILE, STARTING_VOICE, buildPresets, parseTitle, profileBrief } from "@/lib/contentProfile";
 
 type Msg =
   | { role: "user"; text: string; files?: SentFile[] }
   | {
       role: "ai";
       text: string;
-      proposal?: { copy: Copy; changes: string[]; why: string; state: "open" | "applied" | "kept" };
+      card?: "profile" | "missing" | "starter";
+      proposal?: { copy: Copy; changes: string[]; why: string; notes: string[]; state: "open" | "applied" | "kept" };
     };
+
+/** Renders the suggestion as the guest would see it, with additions highlighted against `before`. */
+function ChannelPreview({ copy, before }: { copy: Copy; before?: Copy }) {
+  const show = (now: string, was?: string) => (was !== undefined ? <DiffInline before={was} after={now} /> : now);
+  if (copy.kind === "text") {
+    const was = before?.kind === "text" ? before.text.message : undefined;
+    return (
+      <p className="max-w-[92%] whitespace-pre-wrap rounded-[14px] rounded-bl-sm bg-card px-3 py-2 text-[12.5px] leading-relaxed text-card-foreground shadow-card">
+        {show(copy.text.message, was)}
+      </p>
+    );
+  }
+  const b = before?.kind === "email" ? before.email : undefined;
+  const e = copy.email;
+  return (
+    <div className="overflow-hidden rounded-md border border-border bg-card text-[12px] text-card-foreground shadow-card">
+      <div className="border-b border-border px-3 py-2">
+        <p className="font-semibold">{show(e.subject, b?.subject)}</p>
+        <p className="text-[11px] text-muted-foreground">{show(e.preheader, b?.preheader)}</p>
+      </div>
+      <div className="space-y-2 px-3 py-3">
+        <p className="font-display text-[15px] font-semibold">{show(e.heading, b?.heading)}</p>
+        <p className="whitespace-pre-wrap leading-relaxed">{show(e.body, b?.body)}</p>
+        <span className="inline-block rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground">{e.ctaLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+function DiffInline({ before, after }: { before: string; after: string }) {
+  return (
+    <>
+      {diffWords(before, after).map((p, i) =>
+        p.s === "same" ? <span key={i}>{p.t}</span> : p.s === "add" ? <span key={i} className="rounded-sm bg-brand-soft text-brand">{p.t}</span> : null,
+      )}
+    </>
+  );
+}
 
 export function copyText(copy: Copy) {
   return copy.kind === "text"
@@ -135,14 +174,39 @@ export function AiEditPanel({
   };
 
   const [busy, setBusy] = useState(false);
+  const [voiceReady, setVoiceReady] = useState(HOTEL_PROFILE.defined);
+  const ctx = parseTitle(title);
+  const presets = buildPresets({ ...ctx, copy, hasHistory: !!initialContext });
   const isEmptyState = !initialContext && msgs.length === 1;
+  const createVoice = () =>
+    setMsgs((m) => [...m, { role: "ai", text: "Based on your website and previous campaigns, here's a starting voice. I can use it for this campaign and refine it as you create more.", card: "starter" }]);
   const ask = async (
     request: string,
-    opts?: { retry?: boolean },
+    opts?: { retry?: boolean; created?: boolean },
     files: AttachmentInput[] = [],
   ) => {
     const q = request.trim();
     if ((!q && !files.length) || busy) return;
+    if (q === CHECK_BRAND) {
+      setMsgs((m) => [...m, { role: "user", text: q }, voiceReady
+        ? { role: "ai", text: "This is what I currently use when writing and refining your campaign content.", card: "profile" }
+        : { role: "ai", text: "**Your hotel's content voice isn't defined yet.** I couldn't find a clear, consistent writing style yet — I can help you create one from what you already have.", card: "missing" }]);
+      return;
+    }
+    if (q === ADAPT_BRAND && !voiceReady && !opts?.created) {
+      setMsgs((m) => [...m, { role: "user", text: q }, { role: "ai", text: "**Your content voice isn't defined yet.** I can create a starting voice from the information available for your hotel and use it to improve this campaign.", card: "missing" }]);
+      return;
+    }
+    const notes: string[] = [];
+    let extra = `Context: ${ctx.campaign} automated invite, ${ctx.audience} guests (${ctx.audience === "OTA" ? "booked via an OTA — encourage booking direct next time" : "booked direct — reward the relationship"}), ${copy.kind} channel${copy.kind === "text" ? " (keep it SMS-short, one CTA)" : " (subject and preheader work together)"}.`;
+    if (q === ADAPT_BRAND) {
+      extra += ` Rewrite using this profile. ${profileBrief(HOTEL_PROFILE)} List each concrete change in "changes".`;
+      notes.push(opts?.created ? "I created a starting content voice from your available hotel information and used it for this suggestion." : "I used your hotel's content voice to make these changes.");
+    }
+    if (initialContext && /stronger|pattern|previous/i.test(q)) {
+      extra += ` Stronger-performing previous version insight: ${initialContext}`;
+      notes.push("I also used the stronger-performing previous version as a reference.");
+    }
     const r = q.toLowerCase();
     const nextMemory = [...memory];
     if (/(don'?t|do not|no|without).{0,20}(discount|offer|promo)/.test(r))
@@ -193,6 +257,7 @@ export function AiEditPanel({
     const request2 = [
       opts?.retry ? `${q}. Give a clearly different take than before.` : q,
       ...nextMemory.filter((c) => !r.includes(c)),
+      extra,
     ]
       .filter(Boolean)
       .join(". ");
@@ -236,7 +301,7 @@ export function AiEditPanel({
         role: "ai",
         text: res.reply || "Here's a suggestion.",
         proposal: next
-          ? { copy: next, changes: res.changes.slice(0, 4), why: res.why, state: "open" }
+          ? { copy: next, changes: res.changes.slice(0, 4), why: res.why, notes, state: "open" }
           : undefined,
       },
     ]);
@@ -314,18 +379,14 @@ export function AiEditPanel({
                 What would you like to update?
               </h3>
               <p className="mx-auto mt-2 max-w-sm text-[12.5px] leading-relaxed text-muted-foreground">
-                I’m working from the current {copy.kind === "email" ? "email" : "text message"}. Pick a direction or describe the change below.
+                I know this is the {ctx.campaign} {copy.kind === "email" ? "email" : "text"} for {ctx.audience} guests. Here's what could help most.
               </p>
               <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-                {EDIT_QUICK_ACTIONS.filter(
-                  (action) => copy.kind === "email" || !/subject|text version/i.test(action),
-                )
-                  .slice(0, 6)
-                  .map((action) => (
-                    <Button key={action} variant="outline" size="sm" className="rounded-full text-[11px]" onClick={() => void ask(action)}>
-                      {action}
-                    </Button>
-                  ))}
+                {presets.map((action) => (
+                  <Button key={action} variant="outline" size="sm" className="rounded-full text-[11px]" onClick={() => void ask(action)}>
+                    {action}
+                  </Button>
+                ))}
               </div>
             </div>
           ) : msgs.map((m, idx) =>
@@ -348,45 +409,82 @@ export function AiEditPanel({
                     </div>
                   </MessageContent>
                 </Message>
+                {m.card === "profile" && (
+                  <div className="ml-10 rounded-lg border border-border bg-canvas/45 p-3 text-[12px]">
+                    <p className="font-semibold text-card-foreground">Your hotel's content profile</p>
+                    <dl className="mt-2 grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-1.5">
+                      <dt className="text-muted-foreground">Brand voice</dt><dd>{HOTEL_PROFILE.voice.join(" · ")}</dd>
+                      <dt className="text-muted-foreground">Tone</dt><dd>{HOTEL_PROFILE.tone.join(" · ")}</dd>
+                      <dt className="text-muted-foreground">Writing style</dt><dd>{HOTEL_PROFILE.style.join(" · ")}</dd>
+                      <dt className="text-muted-foreground">Preferences</dt><dd>{HOTEL_PROFILE.preferences.join(" · ")}</dd>
+                      <dt className="text-muted-foreground">Brand assets</dt><dd>{HOTEL_PROFILE.assets.map((a) => `${a.label} ${a.ok ? "✓" : "— Not added"}`).join(" · ")}</dd>
+                      <dt className="text-muted-foreground">Content sources</dt><dd>{HOTEL_PROFILE.sources.map((a) => `${a.label} ${a.ok ? "✓" : "— Not added"}`).join(" · ")}</dd>
+                    </dl>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      <Button size="sm" variant="brand" onClick={() => void ask(ADAPT_BRAND)}>Edit with AI</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setInput("Update our content profile: "); inputRef.current?.focus(); }}>Add or update information</Button>
+                    </div>
+                  </div>
+                )}
+                {m.card === "missing" && (
+                  <div className="ml-10 flex flex-wrap gap-1.5">
+                    <Button size="sm" variant="brand" onClick={createVoice}>Create suggested voice</Button>
+                    <Button size="sm" variant="outline" onClick={createVoice}>Analyze our website</Button>
+                    <Button size="sm" variant="outline" onClick={createVoice}>Learn from our content</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setMsgs((x) => [...x, { role: "ai", text: "No problem — I'll keep using your current content as written. You can set up your voice any time." }])}>Do this later</Button>
+                  </div>
+                )}
+                {m.card === "starter" && (
+                  <div className="ml-10 rounded-lg border border-border bg-canvas/45 p-3 text-[12px]">
+                    <p className="font-semibold text-card-foreground">Suggested starting voice</p>
+                    <ul className="mt-2 space-y-1.5">
+                      {STARTING_VOICE.map((v) => <li key={v.name}><span className="font-semibold">{v.name}</span> — <span className="text-muted-foreground">{v.text}</span></li>)}
+                    </ul>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      <Button size="sm" variant="brand" onClick={() => { setVoiceReady(true); void ask(ADAPT_BRAND, { created: true }); }}>Use this voice</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setInput("Adjust the starting voice: "); inputRef.current?.focus(); }}>Adjust with AI</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setMsgs((x) => [...x, { role: "ai", text: "Okay — not now." }])}>Not now</Button>
+                    </div>
+                  </div>
+                )}
                 {m.proposal && (
                   <div
                     className={`ml-10 overflow-hidden rounded-lg border bg-canvas/45 ${m.proposal.state === "open" ? "border-brand/30 shadow-card" : "border-border opacity-70"}`}
                   >
                     <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Suggested update
-                      </p>
+                      <div className="flex rounded-md bg-muted p-0.5 text-[11px] font-semibold">
+                        {(["preview", "current"] as const).map((v) => (
+                          <button key={v} type="button" onClick={() => setCompareIdx(v === "current" ? idx : null)} className={`rounded px-2 py-0.5 ${(compareIdx === idx) === (v === "current") ? "bg-card text-card-foreground shadow-card" : "text-muted-foreground"}`}>
+                            {v === "preview" ? "Preview suggestion" : "Current content"}
+                          </button>
+                        ))}
+                      </div>
                       {m.proposal.state !== "open" && (
                         <span className="text-[11px] text-muted-foreground">
                           {m.proposal.state === "applied" ? "Applied" : "Not used"}
                         </span>
                       )}
                     </div>
-                    <div className="max-h-64 overflow-y-auto px-3 py-2.5">
-                      {compareIdx === idx ? (
-                        <Diff before={copyText(copy)} after={copyText(m.proposal.copy)} />
-                      ) : (
-                        <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed text-card-foreground">
-                          {copyText(m.proposal.copy)}
-                        </p>
+                    <div className="max-h-72 overflow-y-auto bg-muted/30 px-3 py-3">
+                      <ChannelPreview copy={compareIdx === idx ? copy : m.proposal.copy} before={compareIdx === idx ? undefined : copy} />
+                    </div>
+                    <div className="space-y-2 border-t border-border px-3 py-2.5 text-[11.5px]">
+                      {m.proposal.notes.map((n) => <p key={n} className="font-semibold text-brand">{n}</p>)}
+                      {m.proposal.changes.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-card-foreground">What I changed</p>
+                          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
+                            {m.proposal.changes.map((c) => <li key={c}>{c}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                      {m.proposal.why && (
+                        <div>
+                          <p className="font-semibold text-card-foreground">Why</p>
+                          <p className="mt-0.5 text-muted-foreground">{m.proposal.why}</p>
+                        </div>
                       )}
                     </div>
-                    <ul className="flex flex-wrap gap-1 border-t border-border px-3 py-2">
-                      {m.proposal.changes.map((c) => (
-                        <li
-                          key={c}
-                          className="rounded bg-muted px-1.5 py-0.5 text-[10.5px] text-muted-foreground"
-                        >
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
-                    <details className="border-t border-border px-3 py-2 text-[11.5px] text-muted-foreground">
-                      <summary className="cursor-pointer select-none font-medium text-card-foreground">
-                        Why this suggestion?
-                      </summary>
-                      <p className="mt-1">{m.proposal.why}</p>
-                    </details>
                     {m.proposal.state === "open" && (
                       <div className="flex flex-wrap gap-1.5 border-t border-border px-3 py-2.5">
                         <Button
@@ -399,7 +497,7 @@ export function AiEditPanel({
                           }}
                         >
                           <Check size={13} />
-                          Apply changes
+                          Use suggestion
                         </Button>
                         <Button
                           size="sm"
@@ -419,13 +517,8 @@ export function AiEditPanel({
                           <RefreshCw size={12} />
                           Try another
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setCompareIdx(compareIdx === idx ? null : idx)}
-                        >
-                          <GitCompare size={12} />
-                          {compareIdx === idx ? "Hide changes" : "See changes"}
+                        <Button size="sm" variant="ghost" onClick={() => { setInput("Edit further: "); inputRef.current?.focus(); }}>
+                          Edit further
                         </Button>
                         {onEditMyself && (
                           <Button size="sm" variant="ghost" onClick={onEditMyself}>
@@ -472,9 +565,9 @@ export function AiEditPanel({
         </div>
 
         <div className="shrink-0 border-t border-brand/20 bg-brand-soft/30 px-4 pb-3 pt-2.5 sm:px-5">
-          {suggestedActions?.length ? (
+          {!isEmptyState && (
             <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
-              {suggestedActions.slice(0, 3).map((action) => (
+              {[...(suggestedActions ?? []), ...presets].filter((a, i, all) => all.indexOf(a) === i).slice(0, 6).map((action) => (
                 <Button
                   key={action}
                   variant="outline"
@@ -486,7 +579,7 @@ export function AiEditPanel({
                 </Button>
               ))}
             </div>
-          ) : null}
+          )}
           <TooltipProvider>
             <PromptInput
               accept={ACCEPT_ALL}
