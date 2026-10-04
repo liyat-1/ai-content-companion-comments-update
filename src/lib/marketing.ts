@@ -538,7 +538,7 @@ function variantFrom(seed: Seed, key: AudienceKey): Variant {
   };
 }
 
-function seedState(): MarketingState {
+export function seedState(): MarketingState {
   return {
     campaigns: SEEDS.map((s, i) => ({
       id: s.id,
@@ -547,7 +547,7 @@ function seedState(): MarketingState {
       purpose: s.purpose,
       group: s.group,
       enabled: i % 5 !== 4,
-      strategy: s.strategy ?? "text",
+      strategy: s.strategy ?? (s.group === "invites" ? "text_email" : "text"),
       promotionMode: s.id === "no-show" ? "none" : "inherit",
       promotionId: null,
       variants: { direct: variantFrom(s, "direct"), ota: variantFrom(s, "ota") },
@@ -580,7 +580,7 @@ function emit() {
 }
 
 /** Brings campaigns saved by older versions up to the current shape. */
-function migrateCampaign(c: MarketingCampaign): MarketingCampaign {
+export function migrateCampaign(c: MarketingCampaign): MarketingCampaign {
   const fix = (v: Variant): Variant => {
     const legacy = v as unknown as { text: { mediaId?: string | null } };
     return {
@@ -604,6 +604,7 @@ function migrateCampaign(c: MarketingCampaign): MarketingCampaign {
   return {
     ...c,
     purpose: c.purpose ?? seed?.purpose ?? "Keep guests informed at the right moment in their journey.",
+    strategy: c.group === "invites" ? "text_email" : c.strategy,
     variants: { direct: fix(c.variants.direct), ota: fix(c.variants.ota) },
   };
 }
@@ -620,7 +621,7 @@ function hydrate() {
           // media urls come from bundled assets; always take the fresh ones
           state = {
             ...parsed,
-            campaigns: parsed.campaigns.map(migrateCampaign),
+            campaigns: parsed.campaigns.filter((campaign) => SEEDS.some((seed) => seed.id === campaign.id)).map(migrateCampaign),
             media: parsed.media?.length ? parsed.media : MEDIA,
             templates: TEMPLATES,
             // keep saved offers, and add any starter offers added since
