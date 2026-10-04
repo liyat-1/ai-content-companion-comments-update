@@ -366,13 +366,28 @@ export function V2Workspace({
                                 </span>
                               ))}
                           </div>
-                          <div className="mt-4 rounded-md bg-canvas p-3">
-                            <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-                              Text preview
-                            </p>
-                            <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-card-foreground">
-                              “{fill(text)}”
-                            </p>
+                          <div className="mt-4 space-y-2">
+                            <div className="rounded-md bg-canvas p-3">
+                              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                                Text preview
+                              </p>
+                              <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-card-foreground">
+                                “{fill(text)}”
+                              </p>
+                            </div>
+                            {email && (
+                              <div className="rounded-md bg-canvas p-3">
+                                <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                                  Email preview
+                                </p>
+                                <p className="mt-1 line-clamp-1 text-[12px] font-semibold text-card-foreground">
+                                  {fill(email.subject)}
+                                </p>
+                                <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+                                  {fill(email.preheader ?? email.body)}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-1 border-t border-border p-2">
