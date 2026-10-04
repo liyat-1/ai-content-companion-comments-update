@@ -46,6 +46,7 @@ function ToolButton({
  */
 export function MarketingTools({ campaigns }: { campaigns: MarketingCampaign[] }) {
   const [overlay, setOverlay] = useState<"strategy" | "promo" | "media" | null>(null);
+  const invitesOnly = campaigns.length > 0 && campaigns.every((campaign) => campaign.group === "invites");
 
   const withPromo = campaigns.filter((c) => {
     const ids = campaignPromotionIds(c);
@@ -54,13 +55,13 @@ export function MarketingTools({ campaigns }: { campaigns: MarketingCampaign[] }
   const withMedia = campaigns.filter((c) => campaignMediaIds(c).length > 0);
 
   return (
-    <div className="grid gap-2 sm:grid-cols-3">
-      <ToolButton
+    <div className={`grid gap-2 ${invitesOnly ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
+      {!invitesOnly && <ToolButton
         icon={Layers}
         title="Manage channel strategy"
         summary={`How each of the ${campaigns.length} campaigns is delivered`}
         onClick={() => setOverlay("strategy")}
-      />
+      />}
       <ToolButton
         icon={Gift}
         title="Manage promos"

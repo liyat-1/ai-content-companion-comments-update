@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { seedState } from "./marketing";
+import { migrateCampaign, seedState } from "./marketing";
 
 describe("automated invite channels", () => {
   const invites = seedState().campaigns.filter((campaign) => campaign.group === "invites");
@@ -22,5 +22,9 @@ describe("automated invite channels", () => {
       expect(campaign.variants[audience].text.message.length).toBeGreaterThan(0);
       expect(campaign.variants[audience].email.body.length).toBeGreaterThan(0);
     }
+  });
+
+  test.each(invites)("$name saved as text-only becomes email and text", (campaign) => {
+    expect(migrateCampaign({ ...campaign, strategy: "text" }).strategy).toBe("text_email");
   });
 });
