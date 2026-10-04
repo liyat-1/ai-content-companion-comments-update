@@ -361,7 +361,7 @@ function DiffText({ parts }: { parts: DiffPart[] }) {
             part.kind === "removed"
               ? "opacity-60 line-through decoration-warning/70"
               : part.kind === "added"
-                ? "rounded-sm bg-brand-soft px-0.5 font-semibold text-brand"
+                ? "rounded-sm bg-brand-soft/70 px-0.5 text-card-foreground"
                 : ""
           }
         >
@@ -453,19 +453,21 @@ function versionStats(campaign: Campaign, index: number) {
   };
 }
 
-const versionStatus = (index: number) =>
-  index === 0 ? "Live until refresh" : index === 1 ? "Archived" : "Archived · Original";
+const versionStatus = (index: number, adopted: boolean) =>
+  index === 0 ? (adopted ? "Previous" : "Current") : "Archived";
 
 function HistoryDialog({
   campaign,
   open,
   selectedId,
+  adopted,
   onClose,
   onUse,
 }: {
   campaign: Campaign;
   open: boolean;
   selectedId: string;
+  adopted: boolean;
   onClose: () => void;
   onUse: (id: string) => void;
 }) {
@@ -478,7 +480,7 @@ function HistoryDialog({
   };
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden border-border bg-card p-0 shadow-float">
+      <DialogContent overlayClassName="z-[60]" className="z-[61] max-h-[85vh] max-w-2xl overflow-hidden border-border bg-card p-0 shadow-float">
         <DialogHeader className="border-b border-border px-5 py-4 pr-12">
           <DialogTitle className="text-[17px]">Content history</DialogTitle>
           <p className="text-[12px] text-muted-foreground">{campaign.name} · Published versions</p>
@@ -503,7 +505,7 @@ function HistoryDialog({
                     <span className="flex flex-wrap items-center gap-1.5">
                       <span className="text-[13px] font-semibold text-card-foreground">{version.date}</span>
                       <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        {versionStatus(index)}
+                        {versionStatus(index, adopted)}
                       </span>
                       {inReview && (
                         <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand">In this review</span>
@@ -897,6 +899,7 @@ export function AutomatedRefresh() {
         campaign={campaign}
         open={historyOpen}
         selectedId={baseline.id}
+        adopted={adopted}
         onClose={() => setHistoryOpen(false)}
         onUse={(id) => setHistoryId((value) => ({ ...value, [campaign.id]: id }))}
       />
