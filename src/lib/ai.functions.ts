@@ -72,3 +72,52 @@ Return ONLY JSON: {"reply": string (short, friendly markdown explaining what you
       return { reply: "", direct: null, ota: null, directChanges: [], otaChanges: [], why: "", error: (e as Error).message };
     }
   });
+
+export type BrandDraft = { voice: string[]; tone: string[]; style: string[]; preferences: string[]; avoid: string[]; summary: string };
+export type BrandReply = { reply: string; profile: BrandDraft | null; sources: string[]; error?: string };
+
+/** Conversational brand-profile builder: reads links, files and answers, then proposes a profile to review. */
+export const brandAssist = createServerFn({ method: "POST" })
+  .inputValidator((d: { text: string; files: PreparedAttachment[]; history: History; current: BrandDraft | null }) => d)
+  .handler(async ({ data }): Promise<BrandReply> => {
+    const { askGateway, attachmentParts, parseJson } = await import("./ai.server");
+    const urls = [...new Set((data.text.match(/https?:\/\/[^\s)]+|(?:www\.)[^\s)]+/gi) ?? []))].slice(0, 2);
+    const fetched: string[] = [];
+    const sources: string[] = [];
+    for (const raw of urls) {
+      const url = raw.startsWith("http") ? raw : `https://${raw}`;
+      try {
+        const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 DirectfulBot" }, signal: AbortSignal.timeout(9000) });
+        const html = await res.text();
+        const text = html
+          .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/&nbsp;|&amp;|&#\d+;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 7000);
+        fetched.push(`Content fetched from ${url}:\n"""\n${text || "(page had no readable text)"}\n"""`);
+        sources.push(new URL(url).hostname);
+      } catch {
+        fetched.push(`The link ${url} could not be opened. Tell the user kindly and ask them to paste the text or attach the file instead.`);
+      }
+    }
+    const system = `You are Directful's brand-voice assistant for a hotel's guest-messaging team. You help them create or refine the hotel's content profile conversationally.
+Current profile (JSON or null): ${JSON.stringify(data.current)}
+Use any fetched web pages, attached documents/images and the user's answers. Be warm, brief (under 90 words), and specific — cite what you learned from their sources.
+If you don't have enough to propose a profile yet, ask ONE focused question (e.g. how should guests feel, words to avoid, formality) and return "profile": null.
+When you have enough (or the user asks you to change something), return the full updated profile. Each list has 2-4 short items; "avoid" lists phrases to never use; "summary" is one sentence.
+Return ONLY JSON: {"reply": string (markdown), "profile": {"voice": string[], "tone": string[], "style": string[], "preferences": string[], "avoid": string[], "summary": string} | null}.`;
+    const history = data.history.slice(-8).map((m) => `${m.role}: ${m.text}`).join("\n");
+    try {
+      const text = await askGateway(system, [
+        { type: "text", text: `${history ? `Conversation so far:\n${history}\n\n` : ""}User: ${data.text || "Please use the attached files."}${fetched.length ? `\n\n${fetched.join("\n\n")}` : ""}` },
+        ...(attachmentParts(data.files) as never[]),
+      ]);
+      const json = parseJson<BrandReply>(text);
+      if (!json) return { reply: text, profile: null, sources };
+      return { reply: json.reply ?? "", profile: json.profile ?? null, sources };
+    } catch (e) {
+      return { reply: "", profile: null, sources, error: (e as Error).message };
+    }
+  });
