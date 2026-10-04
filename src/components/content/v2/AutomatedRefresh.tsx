@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
-  Building2,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -11,14 +10,12 @@ import {
   Mail,
   MessageSquareText,
   RotateCcw,
-  Sparkles,
   TrendingDown,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { AiMark } from "@/components/content/shared";
 import { CampaignEditor } from "@/components/marketing/CampaignEditor";
 import { V2Workspace } from "./V2Workspace";
 
@@ -281,15 +278,6 @@ export function useStore() {
 const fmt = (value: number) => `${value.toFixed(1)}%`;
 const channelKey = (channel: Channel) => channel.toLowerCase() as "email" | "text";
 
-function Attribution() {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand">
-      <Sparkles size={12} />
-      Directful recommendation · AI-assisted
-    </span>
-  );
-}
-
 function SegmentControl<T extends string>({
   value,
   options,
@@ -396,53 +384,33 @@ function emailFields(body: string, current: boolean) {
   };
 }
 
-function CompactComparison({
+function ContentPreview({
   channel,
   previous,
   current,
-  leftLabel,
-  leftMeta,
-  rightLabel,
-  rightMeta,
+  recommended,
 }: {
   channel: Channel;
   previous: string;
   current: string;
-  leftLabel: string;
-  leftMeta: string;
-  rightLabel: string;
-  rightMeta: string;
+  recommended: boolean;
 }) {
   const diff = wordDiff(previous, current);
-  const head = (isRight: boolean) => (
-    <div className="min-w-0">
-      <p className={`truncate text-[11.5px] font-semibold ${isRight ? "text-brand" : "text-card-foreground"}`}>
-        {isRight ? rightLabel : leftLabel}
-      </p>
-      <p className="truncate text-[10px] text-muted-foreground">{isRight ? rightMeta : leftMeta}</p>
-    </div>
-  );
-  if (channel === "Text")
+  if (channel === "Text") {
     return (
-      <div className="grid gap-2.5 md:grid-cols-2">
-        {[false, true].map((isRight) => (
-          <article
-            key={String(isRight)}
-            className={`rounded-md border bg-card p-3 ${isRight ? "border-brand/35" : "border-border"}`}
-          >
-            <div className="mb-2 flex items-center justify-between gap-2">
-              {head(isRight)}
-              {isRight ? <AiMark size={20} /> : <MessageSquareText size={13} className="text-muted-foreground" />}
-            </div>
-            <div
-              className={`max-w-[92%] rounded-[14px] rounded-bl-sm px-3 py-2 text-[11.5px] leading-5 ${isRight ? "bg-brand text-brand-foreground" : "bg-muted"}`}
-            >
-              <DiffText parts={isRight ? diff.current : diff.previous} />
-            </div>
-          </article>
-        ))}
-      </div>
+      <article className="min-w-0 overflow-hidden rounded-md border border-border bg-card">
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+          <MessageSquareText size={13} className="text-muted-foreground" />
+          <h5 className="text-[11px] font-semibold text-card-foreground">Text</h5>
+        </div>
+        <div className="p-3">
+          <p className={`max-w-[90%] rounded-[14px] rounded-bl-sm px-3 py-2 text-[11.5px] leading-5 ${recommended ? "bg-brand text-brand-foreground" : "bg-muted text-card-foreground"}`}>
+            <DiffText parts={recommended ? diff.current : diff.previous} />
+          </p>
+        </div>
+      </article>
     );
+  }
   const oldEmail = emailFields(previous, false);
   const newEmail = emailFields(current, true);
   const fields = [
@@ -452,39 +420,25 @@ function CompactComparison({
     ["Button", oldEmail.cta, newEmail.cta],
   ] as const;
   return (
-    <div className="grid gap-2.5 md:grid-cols-2">
-      {[false, true].map((isRight) => (
-        <article
-          key={String(isRight)}
-          className={`overflow-hidden rounded-md border bg-card ${isRight ? "border-brand/35" : "border-border"}`}
-        >
-          <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/35 px-3 py-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="flex gap-1" aria-hidden>
-                {[0, 1, 2].map((dot) => (
-                  <span key={dot} className="size-1.5 rounded-full bg-muted-foreground/45" />
-                ))}
-              </span>
-              {head(isRight)}
+    <article className="min-w-0 overflow-hidden rounded-md border border-border bg-card">
+      <div className="flex items-center gap-2 border-b border-border bg-muted/35 px-3 py-2">
+        <Mail size={13} className="text-muted-foreground" />
+        <h5 className="text-[11px] font-semibold text-card-foreground">Email</h5>
+      </div>
+      <div className="divide-y divide-border">
+        {fields.map(([label, oldValue, newValue]) => {
+          const fieldDiff = wordDiff(oldValue, newValue);
+          return (
+            <div key={label} className="grid grid-cols-[66px_minmax(0,1fr)] gap-2 px-3 py-2">
+              <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
+              <p className={`min-w-0 break-words text-[11px] leading-4 text-card-foreground ${label === "Button" ? "font-semibold" : ""}`}>
+                <DiffText parts={recommended ? fieldDiff.current : fieldDiff.previous} />
+              </p>
             </div>
-            {isRight ? <AiMark size={20} /> : <Mail size={13} className="text-muted-foreground" />}
-          </div>
-          <div className="divide-y divide-border">
-            {fields.map(([label, oldValue, newValue]) => {
-              const fieldDiff = wordDiff(oldValue, newValue);
-              return (
-                <div key={label} className="grid grid-cols-[66px_minmax(0,1fr)] gap-2 px-3 py-1.5">
-                  <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
-                  <p className={`text-[11px] leading-4 ${label === "Button" ? "font-semibold text-brand" : ""}`}>
-                    <DiffText parts={isRight ? fieldDiff.current : fieldDiff.previous} />
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </article>
-      ))}
-    </div>
+          );
+        })}
+      </div>
+    </article>
   );
 }
 
@@ -775,93 +729,68 @@ export function AutomatedRefresh() {
 
       <Dialog open={reviewId !== null} onOpenChange={(open) => !open && closeReview()}>
         <DialogContent className="max-h-[90vh] max-w-5xl overflow-hidden border-border bg-card p-0 shadow-float">
-          <DialogHeader className="border-b border-border px-5 py-3 pr-12">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <DialogTitle className="text-[17px]">Directful content review</DialogTitle>
-                <div className="mt-0.5 flex flex-wrap items-center gap-3">
-                  <Attribution />
-                  <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Building2 size={12} />
-                    {campaign.properties} of 31 properties
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1" aria-label="Invite timing">
-                <Button variant="outline" size="icon" className="size-8" aria-label="Previous campaign" onClick={() => go(-1)}>
-                  <ChevronLeft size={15} />
-                </Button>
-                <div className="min-w-[150px] px-2 text-center">
-                  <p className="text-[13px] font-semibold text-card-foreground">{campaign.name}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {campaignIndex + 1} of {CAMPAIGNS.length} ·{" "}
-                    <span className={adopted ? "font-semibold text-brand" : ""}>
-                      {adopted ? "Using Directful content" : "Using current content"}
-                    </span>
-                  </p>
-                </div>
-                <Button variant="outline" size="icon" className="size-8" aria-label="Next campaign" onClick={() => go(1)}>
-                  <ChevronRight size={15} />
-                </Button>
-              </div>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Campaign status">
-              {CAMPAIGNS.map((item) => {
-                const isAdopted = state[item.id]?.adopted;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => openReview(item.id)}
-                    className={`inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] ${item.id === campaign.id ? "border-foreground/40 font-semibold text-card-foreground" : "border-border text-muted-foreground"}`}
-                  >
-                    <span className={`size-1.5 rounded-full ${isAdopted ? "bg-brand" : "bg-muted-foreground/40"}`} />
-                    {item.name}
-                  </button>
-                );
-              })}
-              <span className="ml-auto flex items-center gap-3 text-[10px] text-muted-foreground">
-                <span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-brand" />Directful adopted</span>
-                <span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-muted-foreground/40" />Current content</span>
-              </span>
-            </div>
-          </DialogHeader>
-          <div className="max-h-[calc(90vh-118px)] overflow-y-auto px-5 py-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[11.5px] text-muted-foreground">
-                {adopted
-                  ? `Directful’s content is now live. Your ${baseline.date} content is kept as previous content.`
-                  : `Your ${baseline.date} content stays live until you adopt Directful’s recommendation.`}
-              </p>
-              <Button variant="outline" size="sm" className="h-8 text-[11px]" onClick={() => setHistoryOpen(true)}>
-                <History size={13} />
-                History
-              </Button>
-            </div>
-            <div className="space-y-4">
-              {(["Direct", "OTA"] as Audience[]).map((aud) => (
-                <section key={aud}>
-                  <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-card-foreground">
-                    {aud} guests
-                  </h3>
-                  <div className="space-y-2.5">
-                    {(["Email", "Text"] as Channel[]).map((ch) => (
-                      <CompactComparison
-                        key={ch}
-                        channel={ch}
-                        previous={baselineContent[aud][channelKey(ch)]}
-                        current={currentContent[aud][channelKey(ch)]}
-                        leftLabel={`${adopted ? "Previous content" : "Current content"} · ${ch}`}
-                        leftMeta={`${baseline.date} · ${baseline.editor}`}
-                        rightLabel={`${adopted ? "Directful content · In use" : "Directful recommendation"} · ${ch}`}
-                        rightMeta={adopted ? "Adopted in this review" : "Updated 2 min ago"}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
+                     <DialogHeader className="border-b border-border px-5 py-3 pr-12">
+             <div className="flex flex-wrap items-center justify-between gap-3">
+               <DialogTitle className="text-[17px]">Directful content review</DialogTitle>
+               <div className="flex items-center gap-1" aria-label="Invite timing">
+                 <Button variant="outline" size="icon" className="size-8" aria-label="Previous campaign" onClick={() => go(-1)}>
+                   <ChevronLeft size={15} />
+                 </Button>
+                 <div className="min-w-[150px] px-2 text-center">
+                   <p className="text-[13px] font-semibold text-card-foreground">{campaign.name}</p>
+                   <p className="text-[10px] text-muted-foreground">
+                     {campaignIndex + 1} of {CAMPAIGNS.length} · {adopted ? "Using Directful content" : "Using current content"}
+                   </p>
+                 </div>
+                 <Button variant="outline" size="icon" className="size-8" aria-label="Next campaign" onClick={() => go(1)}>
+                   <ChevronRight size={15} />
+                 </Button>
+               </div>
+             </div>
+           </DialogHeader>
+           <div className="max-h-[calc(90vh-75px)] overflow-y-auto px-5 py-4">
+             <div className="grid gap-4 md:grid-cols-2">
+               <section className="min-w-0">
+                 <div className="mb-3 flex min-h-12 flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                   <div>
+                     <h3 className="text-[15px] font-semibold text-card-foreground">{adopted ? "Previous content" : "Current content"}</h3>
+                     <p className="text-[10.5px] text-muted-foreground">{baseline.date} · {baseline.editor}</p>
+                   </div>
+                   <Button variant="outline" size="sm" className="h-8 text-[11px]" onClick={() => setHistoryOpen(true)}>
+                     <History size={13} /> History
+                   </Button>
+                 </div>
+                 <div className="space-y-4">
+                   {(["Direct", "OTA"] as Audience[]).map((aud) => (
+                     <div key={aud} className="space-y-2">
+                       <h4 className="text-[11px] font-semibold uppercase text-muted-foreground">{aud} guests</h4>
+                       {(["Email", "Text"] as Channel[]).map((ch) => (
+                         <ContentPreview key={ch} channel={ch} previous={baselineContent[aud][channelKey(ch)]} current={currentContent[aud][channelKey(ch)]} recommended={false} />
+                       ))}
+                     </div>
+                   ))}
+                 </div>
+               </section>
+               <section className="min-w-0">
+                 <div className="mb-3 flex min-h-12 items-center border-b border-border pb-3">
+                   <div>
+                     <h3 className="text-[15px] font-semibold text-card-foreground">Directful recommendation</h3>
+                     <p className="text-[10.5px] text-muted-foreground">{adopted ? "In use" : "Ready for your review"}</p>
+                   </div>
+                 </div>
+                 <div className="space-y-4">
+                   {(["Direct", "OTA"] as Audience[]).map((aud) => (
+                     <div key={aud} className="space-y-2">
+                       <h4 className="text-[11px] font-semibold uppercase text-muted-foreground">{aud} guests</h4>
+                       {(["Email", "Text"] as Channel[]).map((ch) => (
+                         <ContentPreview key={ch} channel={ch} previous={baselineContent[aud][channelKey(ch)]} current={currentContent[aud][channelKey(ch)]} recommended />
+                       ))}
+                     </div>
+                   ))}
+                 </div>
+               </section>
+             </div>
+<div className="mt-3 grid gap-3 md:grid-cols-2">
               <section className="rounded-md border border-border p-3.5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-brand">Creative shift</p>
                 <h3 className="mt-1 text-[15px] font-semibold text-card-foreground">
