@@ -8,7 +8,6 @@ import {
   Clock3,
   Mail,
   MessageSquare,
-  Sparkles,
   TrendingDown,
   TrendingUp,
   Users,
@@ -16,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CampaignEditor } from "@/components/marketing/CampaignEditor";
-import { AiMark, EmailMock, fill } from "@/components/content/shared";
+import { EmailMock, fill } from "@/components/content/shared";
 import { EDITOR_ID, MONTH_PACKAGES, packageSnippet, useLibrary } from "@/lib/contentLibrary";
 import { useMarketing } from "@/lib/marketing";
 import { RefreshFlow, type FlowSetup } from "./RefreshFlow";
@@ -129,10 +128,7 @@ export function V2Workspace({
           >
             <div aria-hidden className="ai-grid pointer-events-none absolute inset-0 opacity-50" />
             <div className="relative max-w-2xl">
-              <span className="inline-block ai-float">
-                <AiMark size={52} live />
-              </span>
-              <p className="mt-6 text-[11px] font-semibold uppercase text-brand">
+              <p className="text-[11px] font-semibold uppercase text-brand">
                 New in Content Library · {HOTEL}
               </p>
               <h1 className="mt-3 font-display text-[32px] font-semibold leading-tight text-card-foreground sm:text-[42px]">
@@ -145,7 +141,6 @@ export function V2Workspace({
               </p>
               <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
                 <Button variant="brand" size="lg" onClick={() => openUpdate()}>
-                  <Sparkles size={15} />
                   Update with AI
                 </Button>
                 <Button variant="outline" size="lg" onClick={revealContent}>
@@ -181,7 +176,6 @@ export function V2Workspace({
                   )
                 }
               >
-                <Sparkles size={15} />
                 Update with AI
               </Button>
             </header>
@@ -190,9 +184,6 @@ export function V2Workspace({
                 className="mb-4 flex flex-wrap items-center gap-3 border-l-2 border-brand bg-brand-soft/35 px-4 py-3"
                 aria-label="Content awaiting review"
               >
-                <span className="grid size-8 shrink-0 place-items-center rounded-md bg-brand text-brand-foreground">
-                  <Sparkles size={15} />
-                </span>
                 <div className="min-w-[220px] flex-1">
                   <p className="text-[13px] font-semibold text-card-foreground">
                     We refreshed your invite content
@@ -221,7 +212,6 @@ export function V2Workspace({
                   </p>
                 </div>
                 <Button size="sm" variant="brand" onClick={() => openUpdate(selected)}>
-                  <Sparkles size={13} />
                   Refresh {selected.short}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={dismissPusher}>
@@ -300,7 +290,6 @@ export function V2Workspace({
                 </div>
                 {selected.aiAssisted && selected.preferences && (
                   <div className="flex flex-wrap items-start gap-3 border-l-2 border-brand bg-brand-soft/30 px-4 py-3 text-[12px]">
-                    <Sparkles size={15} className="mt-0.5 shrink-0 text-brand" />
                     <div>
                       <p className="font-semibold text-card-foreground">
                         How this version was written
